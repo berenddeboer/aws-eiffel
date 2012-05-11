@@ -29,17 +29,31 @@ feature -- Tests
 			cloudwatch: AWS_CLOUDWATCH
 			data_points: DS_LINKED_LIST [AWS_METRIC_DATUM]
 			data_point: AWS_METRIC_DATUM
+			now: EPX_TIME
 		do
 			create cloudwatch.make (access_key_id, secret_access_key)
-			create data_point.make ("test-data-point", 1, "Count", Void)
+
+			-- create data_point.make ("test-data-point", 1, "Count", Void)
+			-- create data_points.make
+			-- data_points.put_last (data_point)
+			-- cloudwatch.put_metric_data ("aws-eiffel-test", data_points)
+			-- debug ("test")
+			-- 	print (cloudwatch.response_code.out + " " + cloudwatch.response_phrase + "%N")
+			-- 	print (cloudwatch.response.as_string)
+			-- end
+			-- assert ("Metric without time put", cloudwatch.is_response_ok)
+
+			create now.make_from_now
+			now.to_utc
 			create data_points.make
+			create data_point.make ("test data point", 0, "Count", now)
 			data_points.put_last (data_point)
 			cloudwatch.put_metric_data ("aws-eiffel-test", data_points)
 			debug ("test")
 				print (cloudwatch.response_code.out + " " + cloudwatch.response_phrase + "%N")
 				print (cloudwatch.response.as_string)
 			end
-			assert ("Metric put", cloudwatch.is_response_ok)
+			assert ("Metric with time put", cloudwatch.is_response_ok)
 		end
 
 	test_list_metrics

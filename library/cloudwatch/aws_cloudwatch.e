@@ -37,16 +37,11 @@ feature {NONE} -- Initialisation
 			access_key_has_correct_length: an_access_key_id /= Void and then an_access_key_id.count = 20
 			secret_key_has_correct_length: a_secret_access_key /= Void and then a_secret_access_key.count = 40
 		do
-			make_secure (aws_cloudwatch_host_name)
-			access_key_id := an_access_key_id
-			create hasher.make (a_secret_access_key.out, create {EPX_SHA1_CALCULATION}.make)
+			make_aws_base (aws_cloudwatch_host_name, an_access_key_id, a_secret_access_key)
 		end
 
 
 feature -- Access
-
-	access_key_id: READABLE_STRING_GENERAL
-			-- Access Key ID (a 20-character, alphanumeric sequence)
 
 	aws_cloudwatch_host_name: STRING = "monitoring.amazonaws.com"
 	--aws_cloudwatch_host_name: STRING = "monitoring.us-east-1.amazonaws.com"
@@ -96,6 +91,9 @@ feature -- CloudWatch API
 				create kv.make ("MetricData.member." + i.out + ".Timestamp", a_data_points.item_for_iteration.timestamp.as_iso_8601)
 				data.put_last (kv)
 				a_data_points.forth
+				i := i + 1
+			variant
+				a_data_points.count - i + 1
 			end
 			data.put_last (new_signature (http_method_POST, cloudwatch_path, data))
 			create form.make_form_urlencoded (data.to_array)
@@ -114,8 +112,6 @@ feature {NONE} -- Request signing
 		do
 			create Result.make ("Signature", signature (a_verb, a_path, a_data))
 		end
-
-	hasher: EPX_HMAC_CALCULATION
 
 	signature (a_verb, a_path: READABLE_STRING_GENERAL; a_data: DS_LINEAR [EPX_KEY_VALUE]): STRING
 			-- Signature as per
@@ -174,7 +170,7 @@ feature {NONE} -- Request signing
 			loop
 				Result.append_string (l.item_for_iteration.key)
 				Result.append_character ('=')
-				Result.append_string (escape_string (l.item_for_iteration.value))
+				Result.append_string (escape_custom (l.item_for_iteration.value, Default_unescaped, False))
 				l.forth
 				if not l.after then
 					Result.append_character ('&')
