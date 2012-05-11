@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+
+<project name="cloudwatch_test" default="help">
+
+	<description>
+		system: "CloudWatch library test"
+		copyright: "Copyright (c) 2012 by Berend de Boer"
+		license: "MIT License (see LICENSE)"
+	</description>
+
+	<inherit>
+		<parent location="${GOBO}/misc/test.eant">
+			<redefine target="init_system"/>
+		</parent>
+	</inherit>
+
+
+<!-- Implementation -->
+
+	<target name="init_system">
+		<set name="system" value="cloudwatch_test"/>
+		<set name="system_dir" value="${AWS_EIFFEL}/test/cloudwatch"/>
+	</target>
+
+</project>

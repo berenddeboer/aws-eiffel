@@ -1,0 +1,25 @@
+<?xml version="1.0"?>
+
+<project name="s3ls" default="help">
+
+	<description>
+		system: "S3 tools"
+		copyright: "Copyright (c) 2011 by Berend de Boer"
+		license: "MIT License (see LICENSE)"
+	</description>
+
+	<inherit>
+		<parent location="${GOBO}/misc/eiffel.eant">
+			<redefine target="init_system"/>
+		</parent>
+	</inherit>
+
+
+<!-- Implementation -->
+
+	<target name="init_system">
+		<set name="system" value="s3ls"/>
+		<set name="system_dir" value="${S3}/src/${system}"/>
+	</target>
+
+</project>

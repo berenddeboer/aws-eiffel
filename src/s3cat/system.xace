@@ -1,0 +1,37 @@
+<?xml version="1.0"?>
+<system name="s3cat">
+	<description>
+		system:      "s3output"
+	</description>
+
+  <root class="S3_CAT" creation="make_no_rescue" if="${DEBUG}"/>
+  <root class="S3_CAT" creation="make" unless="${DEBUG}"/>
+
+	<option unless="${DEBUG}">
+		<option name="assertion" value="none"/>
+		<option name="finalize" value="true"/>
+	</option>
+	<option if="${DEBUG}">
+		<option name="split" value="true"/>
+		<option name="debug_tag" value="ejax"/>
+		<option name="assertion" value="all"/>
+		<option name="garbage_collector" value="none"/>
+		<option name="finalize" value="false"/>
+		<option name="debug" value="false"/>
+<!-- 		<option name="debug_tag" value="http_client"/> -->
+	</option>
+
+  <option if="${GOBO_EIFFEL}=se">
+    <option name="high_memory_compiler" value="true"/>
+  </option>
+
+  <cluster name="myself" location="."/>
+
+	<mount location="${S3}/library/library.xace"/>
+	<mount location="${EPOSIX}/src/library.xace"/>
+	<mount location="${EPOSIX}/test_suite/gobo/gobo.xace" if="${DEBUG}"/>
+	<mount location="${GOBO}/library/library.xace" unless="${DEBUG}"/>
+	<mount location="${EPOSIX}/test_suite/gobo/eiffel.xace" if="${DEBUG}"/>
+	<mount location="${GOBO}/library/kernel.xace" unless="${DEBUG}"/>
+
+</system>

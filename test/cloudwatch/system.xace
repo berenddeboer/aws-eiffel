@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+
+<system name="cloudwatch_test">
+	<description>
+		system:      "getest for AWS CloudWatch"
+		author:      "Berend de Boer [berend@pobox.com]"
+		copyright:   "Copyright (c) 2012, Berend de Boer"
+    license:     "MIT License (see LICENSE)"
+	</description>
+
+	<root class="CLOUDWATCH_TEST" creation="make"/>
+
+	<option unless="${DEBUG}">
+		<option name="assertion" value="none"/>
+		<option name="garbage_collector" value="none"/>
+		<option name="finalize" value="true"/>
+	</option>
+	<option if="${DEBUG}">
+		<option name="assertion" value="all"/>
+		<option name="garbage_collector" value="internal"/>
+		<option name="finalize" value="false"/>
+		<option name="debug" value="true"/>
+		<option name="debug_tag" value="test"/>
+	</option>
+
+  <cluster name="testgen" location="TESTGEN"/>
+  <cluster name="test" location="."/>
+
+  <mount location="${AWS_EIFFEL}/library/library.xace"/>
+  <mount location="${EPOSIX}/src/library.xace"/>
+	<mount location="${GOBO}/library/library.xace"/>
+	<mount location="${GOBO}/library/kernel.xace"/>
+
+</system>

@@ -1,0 +1,16 @@
+*~
+*.[acho]
+*.id
+*.log
+*.melted
+*.sh
+compile_ise.ecf
+compile_se.ace
+compile_ge.xace
+EIFGENs
+TESTGEN
+TAGS
+src/s3cat/s3cat
+src/s3ls/s3ls
+src/s3store/s3store
+test/cloudwatch/cloudwatch_test

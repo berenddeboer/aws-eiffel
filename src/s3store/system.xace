@@ -1,0 +1,30 @@
+<?xml version="1.0"?>
+<system name="s3store">
+	<description>
+		system:      "s3store"
+	</description>
+
+  <root class="S3_STORE" creation="make_no_rescue" if="${DEBUG}"/>
+  <root class="S3_STORE" creation="make" unless="${DEBUG}"/>
+
+	<option unless="${DEBUG}">
+		<option name="assertion" value="none"/>
+		<option name="finalize" value="true"/>
+	</option>
+	<option if="${DEBUG}">
+		<option name="split" value="true"/>
+		<option name="assertion" value="all"/>
+		<option name="garbage_collector" value="none"/>
+		<option name="finalize" value="false"/>
+		<option name="debug" value="false"/>
+	</option>
+
+  <cluster name="myself" location="${S3}/src/s3store"/>
+
+	<mount location="${S3}/library/library.xace"/>
+	<mount location="${EPOSIX}/src/library.xace"/>
+	<cluster name="gedxml"  location="${GOBO}/library/xml/gedxml"/>
+	<mount location="${GOBO}/library/library.xace"/>
+	<mount location="${GOBO}/library/kernel.xace"/>
+
+</system>
