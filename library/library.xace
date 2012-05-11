@@ -11,6 +11,7 @@
   </description>
 
   <cluster name="aws" location="${AWS_EIFFEL}/library">
+    <cluster name="base"/>
     <cluster name="cloudwatch"/>
     <cluster name="documents"/>
     <cluster name="s3"/>

@@ -17,10 +17,7 @@ class
 
 inherit
 
-	EPX_HTTP_11_CLIENT
-		rename
-			make as make_http_11_client
-		end
+	AWS_BASE
 
 	UT_URL_ENCODING
 		export

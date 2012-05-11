@@ -8,4 +8,4 @@ But contributions and cleanup are greatly appreciated.
 
 Requirements
 ============
-Gobo and eposix.
+Gobo and eposix. Might also need Gobo dxml.
