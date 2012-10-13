@@ -32,23 +32,25 @@ create
 
 feature {NONE} -- Initialisation
 
-	make (an_access_key_id, a_secret_access_key: READABLE_STRING_GENERAL)
+	make (an_access_key_id, a_secret_access_key, a_region: READABLE_STRING_GENERAL)
 		require
 			access_key_has_correct_length: an_access_key_id /= Void and then an_access_key_id.count = 20
 			secret_key_has_correct_length: a_secret_access_key /= Void and then a_secret_access_key.count = 40
+			a_region_not_empty: a_region /= Void and then not a_region.is_empty
 		do
-			make_aws_base (aws_cloudwatch_host_name, an_access_key_id, a_secret_access_key)
+			make_aws_base ("monitoring." + a_region.out + ".amazonaws.com", an_access_key_id, a_secret_access_key)
 		end
 
 
 feature -- Access
 
-	aws_cloudwatch_host_name: STRING = "monitoring.amazonaws.com"
+	--aws_cloudwatch_host_name: STRING = "monitoring.amazonaws.com"
 	--aws_cloudwatch_host_name: STRING = "monitoring.us-east-1.amazonaws.com"
 
 	cloudwatch_version: STRING = "2010-08-01"
 
 	cloudwatch_path: STRING = "/"
+	--cloudwatch_path: STRING = "/doc/2010-08-01"
 
 
 feature -- CloudWatch API
