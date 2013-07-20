@@ -67,6 +67,8 @@ feature -- Access
 			-- default value is set to the time the metric data was
 			-- received.
 
+	dimensions: DS_HASH_TABLE [READABLE_STRING_GENERAL, READABLE_STRING_GENERAL]
+
 
 feature -- Status
 
@@ -80,5 +82,23 @@ feature -- Status
 			Result := a_unit /= Void and then not a_unit.is_empty
 		end
 
+
+feature -- Change
+
+	add_dimension (a_name, a_value: READABLE_STRING_GENERAL)
+			-- The Dimension data type further expands on the identity of
+			-- a metric using a Name, Value pair.
+		require
+			a_name_not_empty: a_name /= Void and then not a_name.is_empty
+			a_value_not_empty: a_value /= Void and then not a_value.is_empty
+		do
+			if dimensions = Void then
+				create dimensions.make (2)
+			end
+			dimensions.force_last (a_value, a_name)
+		ensure
+			dimensions_not_void: dimensions /= Void
+			dimension_added: dimensions.has (a_name)
+		end
 
 end
