@@ -14,6 +14,7 @@
     <cluster name="base"/>
     <cluster name="cloudwatch"/>
     <cluster name="documents"/>
+    <cluster name="ec2"/>
     <cluster name="s3"/>
     <cluster name="tools"/>
   </cluster>

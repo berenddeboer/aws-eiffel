@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+
+<project name="multi_disk_snapshot" inherit="${GOBO}/misc/eiffel.eant" default="help">
+
+	<description>
+		system:      "Make snapshots of multiple disks."
+		author:      "Berend de Boer [berend@pobox.com]"
+		copyright:   "Copyright (c) 2013, Berend de Boer"
+	</description>
+
+
+<!-- Implementation -->
+
+	<target name="init_system">
+		<set name="system" value="multi_disk_snapshot"/>
+		<set name="system_dir" value="."/>
+	</target>
+
+</project>

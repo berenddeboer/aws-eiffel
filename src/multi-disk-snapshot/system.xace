@@ -1,0 +1,34 @@
+<?xml version="1.0"?>
+
+<system name="multi_disk_snapshot">
+	<description>
+		system:      "Make snapshots of multiple disks."
+		author:      "Berend de Boer [berend@pobox.com]"
+		copyright:   "Copyright (c) 2013, Berend de Boer"
+	</description>
+
+	<root class="MULTI_DISK_SNAPSHOT" creation="make"/>
+
+	<option unless="${DEBUG}">
+		<option name="assertion" value="require"/>
+		<option name="garbage_collector" value="none"/>
+		<option name="finalize" value="true"/>
+	</option>
+	<option if="${DEBUG}">
+		<option name="split" value="false"/>
+		<option name="debug" value="true"/>
+		<!-- <option name="debug_tag" value="http_client"/> -->
+		<!-- <option name="debug_tag" value="aws-print-string-to-sign"/> -->
+		<option name="assertion" value="all"/>
+		<option name="garbage_collector" value="none"/>
+		<option name="finalize" value="false"/>
+	</option>
+
+  <cluster name="me" location="."/>
+
+	<mount location="${AWS_EIFFEL}/library/library.xace"/>
+	<mount location="${EPOSIX}/src/library.xace"/>
+	<mount location="${GOBO}/library/library.xace"/>
+	<mount location="${GOBO}/library/kernel.xace"/>
+
+</system>
