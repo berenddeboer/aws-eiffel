@@ -2,7 +2,7 @@ note
 
 	description:
 
-		"Base class for utilities that make EC2 API calls"
+		"Base class for utilities that make CloudWatch API calls"
 
 	library: "AWS Eiffel library"
 	author: "Berend de Boer <berend@pobox.com>"
@@ -12,7 +12,7 @@ note
 
 deferred class
 
-	EC2_TOOL
+	CLOUDWATCH_TOOL
 
 
 inherit

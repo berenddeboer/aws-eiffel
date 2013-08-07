@@ -23,7 +23,14 @@ create
 feature {NONE} -- Initialisation
 
 	make (a_name: READABLE_STRING_GENERAL; a_value: DOUBLE; a_unit: READABLE_STRING_GENERAL; a_timestamp: EPX_TIME)
-			-- If timestamp not set, it is initialised to now
+			-- If timestamp not set, it is initialised to now.
+			-- `a_unit' values: Seconds | Microseconds | Milliseconds |
+			-- Bytes | Kilobytes | Megabytes | Gigabytes | Terabytes |
+			-- Bits | Kilobits | Megabits | Gigabits | Terabits | Percent
+			-- | Count | Bytes/Second | Kilobytes/Second |
+			-- Megabytes/Second | Gigabytes/Second | Terabytes/Second |
+			-- Bits/Second | Kilobits/Second | Megabits/Second |
+			-- Gigabits/Second | Terabits/Second | Count/Second | None
 		require
 			name_not_empty: is_valid_name (a_name)
 			unit_valid: is_valid_unit (a_unit)
