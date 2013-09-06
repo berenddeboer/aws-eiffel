@@ -45,11 +45,14 @@ feature {NONE} -- Initialisation
 
 			-- read previous bytes found, access time is last check time
 			-- create mount_points.make
-			create mount_point.make (parser.parameters.first, "xfs")
-			--print ("free: " + mount_point.bytes_free.out + "%N")
-			debug ("disk_full_stats")
+			create mount_point.make (parser.parameters.first)
+			if verbose.occurrences > 1 then
+				print ("last free: " + mount_point.last_bytes_free.out + "%N")
+				print ("currently free: " + mount_point.bytes_free.out + "%N")
 				print ("written: " + mount_point.bytes_written.out + "%N")
 				print ("seconds since last check: " + mount_point.seconds_since_last_check.out + "%N")
+			end
+			if verbose.occurrences > 0 then
 				print ("days to fill up: " + mount_point.days_to_fill_up.out + "%N")
 			end
 
@@ -58,11 +61,13 @@ feature {NONE} -- Initialisation
 			create data_point.make ("Days to fill up", mount_point.days_to_fill_up, "Count", now)
 			data_point.add_dimension ("hostname", hostname)
 			data_point.add_dimension ("path", mount_point.path)
-			-- data_point.add_dimension ("volume", hostname + ":" + mount_point.path)
 			data_points.put_last (data_point)
 			cloudwatch.put_metric_data ("disk-fill-up-time", data_points)
 			if cloudwatch.is_response_ok then
 				if mount_point.seconds_since_last_check >= four_hours then
+					if verbose.occurrences > 0 then
+						print ("More than 4 hours between last check, saving disk free.%N")
+					end
 					mount_point.save_check
 				end
 			else
@@ -98,5 +103,7 @@ feature {NONE} -- Implementation
 	half_an_hour: INTEGER = 1800
 
 	four_hours: INTEGER = 14400
+
+	eight_hours: INTEGER = 28800
 
 end

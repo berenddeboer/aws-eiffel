@@ -36,14 +36,12 @@ create
 
 feature {NONE} -- Initialisation
 
-	make (a_path, a_file_system_type: READABLE_STRING_8)
+	make (a_path: READABLE_STRING_8)
 		require
 			path_not_empty: a_path /= Void and then not a_path.is_empty
-			file_system_type_not_empty: a_file_system_type /= Void and then not a_file_system_type.is_empty
 		do
 			create now.make_from_now
 			path := a_path
-			file_system_type := a_file_system_type
 			create statvfs.allocate_and_clear (posix_statvfs_size)
 			safe_call (posix_statvfs (sh.string_to_pointer (path), statvfs.ptr))
 			sh.unfreeze_all
@@ -60,7 +58,7 @@ feature -- Commands
 			if not is_directory (cache_directory) then
 				make_directory (cache_directory)
 			end
-			string_to_file (last_bytes_free.out, cache_file_name)
+			string_to_file (bytes_free.out, cache_file_name)
 		end
 
 	read_last_check
@@ -127,6 +125,7 @@ feature -- Access
 		end
 
 	last_bytes_free: INTEGER_64
+			-- Bytes free on last recorded check
 
 	seconds_since_last_check: INTEGER
 		once
@@ -144,18 +143,23 @@ feature -- Access
 		local
 			bytes_per_day: DOUBLE
 		do
-			Result := 365
+			Result := max_days
 			if bytes_written > 0 then
 				bytes_per_day := (seconds_in_day / seconds_since_last_check) * bytes_written
 				Result := bytes_free / bytes_per_day
-				if Result > 365 then
-					Result := 365
+				if Result > max_days then
+					Result := max_days
 				end
 			end
 		ensure
 			not_negative: Result >= 0
-			not_more_than_1_year: Result <= 365
+			not_more_than_1_year: Result <= max_days
 		end
+
+	max_days: INTEGER = 99
+			-- The maximum days to return when disk is never or very
+			-- slowly filling up;
+			-- Use a small number so graphs look sanish.
 
 
 feature {NONE} -- Implementation

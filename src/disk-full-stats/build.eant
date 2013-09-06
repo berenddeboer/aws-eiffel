@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+
+<project name="disk_full_stats" inherit="${GOBO}/misc/eiffel.eant" default="help">
+
+	<description>
+		system:      "Publish time to disk full statistics to AWS."
+		author:      "Berend de Boer [berend@pobox.com]"
+		copyright:   "Copyright (c) 2013, Berend de Boer"
+	</description>
+
+
+<!-- Implementation -->
+
+	<target name="init_system">
+		<set name="system" value="disk_full_stats"/>
+		<set name="system_dir" value="."/>
+	</target>
+
+</project>

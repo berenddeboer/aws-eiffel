@@ -1,0 +1,33 @@
+<?xml version="1.0"?>
+
+<system name="disk_full_stats">
+	<description>
+		system:      "Publish time to disk full statistics to AWS."
+		author:      "Berend de Boer [berend@pobox.com]"
+		copyright:   "Copyright (c) 2013, Berend de Boer"
+	</description>
+
+	<root class="DISK_FULL_STATS" creation="make"/>
+
+	<option unless="${DEBUG}">
+		<option name="assertion" value="require"/>
+		<option name="garbage_collector" value="none"/>
+		<option name="finalize" value="true"/>
+	</option>
+	<option if="${DEBUG}">
+		<option name="split" value="false"/>
+		<option name="debug" value="true"/>
+		<option name="debug_tag" value="disk_full_stats"/>
+		<option name="assertion" value="all"/>
+		<option name="garbage_collector" value="none"/>
+		<option name="finalize" value="false"/>
+	</option>
+
+  <cluster name="me" location="."/>
+
+	<mount location="${AWS_EIFFEL}/library/library.xace"/>
+	<mount location="${EPOSIX}/src/library.xace"/>
+	<mount location="${GOBO}/library/library.xace"/>
+	<mount location="${GOBO}/library/kernel.xace"/>
+
+</system>
