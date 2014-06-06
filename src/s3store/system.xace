@@ -19,9 +19,9 @@
 		<option name="debug" value="false"/>
 	</option>
 
-  <cluster name="myself" location="${S3}/src/s3store"/>
+  <cluster name="myself" location="${AWS_EIFFEL}/src/s3store"/>
 
-	<mount location="${S3}/library/library.xace"/>
+	<mount location="${AWS_EIFFEL}/library/library.xace"/>
 	<mount location="${EPOSIX}/src/library.xace"/>
 	<cluster name="gedxml"  location="${GOBO}/library/xml/gedxml"/>
 	<mount location="${GOBO}/library/library.xace"/>

@@ -1,4 +1,4 @@
-indexing
+note
 
 	description:
 
@@ -8,8 +8,6 @@ indexing
 	author: "Berend de Boer <berend@pobox.com>"
 	copyright: "Copyright (c) 2008, Berend de Boer"
 	license: "MIT License (see LICENSE)"
-	date: "$Date$"
-	revision: "$Revision$"
 
 
 class
@@ -18,8 +16,6 @@ class
 
 
 inherit
-
-	ANY
 
 	ST_FORMATTING_ROUTINES
 		export

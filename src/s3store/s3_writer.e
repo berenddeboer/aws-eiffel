@@ -14,12 +14,17 @@ class
 
 	S3_WRITER
 
-
-inherit {NONE}
+inherit
 
 	EPX_CURRENT_PROCESS
+		export
+			{NONE} all
+		end
 
 	KL_IMPORTED_STRING_ROUTINES
+		export
+			{NONE} all
+		end
 
 
 create

@@ -26,10 +26,10 @@ inherit
 			append_other_fields
 		end
 
-
-inherit {NONE}
-
 	UC_SHARED_STRING_EQUALITY_TESTER
+		export
+			{NONE} all
+		end
 
 
 create

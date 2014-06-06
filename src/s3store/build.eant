@@ -19,7 +19,7 @@
 
 	<target name="init_system">
 		<set name="system" value="s3store"/>
-		<set name="system_dir" value="${S3}/src/${system}"/>
+		<set name="system_dir" value="${AWS_EIFFEL}/src/${system}"/>
 	</target>
 
 </project>

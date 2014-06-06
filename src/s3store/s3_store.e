@@ -20,11 +20,6 @@ inherit
 	S3_TOOL
 
 
-inherit {NONE}
-
-	CAPI_TIME
-
-
 create
 
 	make,
@@ -104,17 +99,17 @@ feature -- Writing
 				fd_stdin.set_blocking_io (False)
 			end
 			create start.make_from_now
-			last_speed_update := posix_time
+			last_speed_update := current_time
 			from
 			until
 				fd_stdin.end_of_input
 			loop
 				writer.write (fd_stdin)
 				if verbose.occurrences > 0 then
-					now := posix_time
+					now := current_time
 					if now - last_speed_update > 3 then
 						fd_stderr.put_line (formatted_upload_speed (writer.total_bytes_written, start))
-						last_speed_update := posix_time
+						last_speed_update := current_time
 					end
 				end
 			end

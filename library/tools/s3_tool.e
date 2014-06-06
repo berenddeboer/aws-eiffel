@@ -18,7 +18,7 @@ deferred class
 
 inherit
 
-	S3_ACCESS_KEY
+	AWS_ACCESS_KEY
 
 	S3_VERBOSE_ROUTINES
 		export

@@ -10,7 +10,10 @@ compile_ge.xace
 EIFGENs
 TESTGEN
 TAGS
+src/disk-full-stats/disk_full_stats
+src/multi-disk-snapshot/multi_disk_snapshot
 src/s3cat/s3cat
 src/s3ls/s3ls
 src/s3store/s3store
+src/s3store/s3store-x64
 test/cloudwatch/cloudwatch_test
