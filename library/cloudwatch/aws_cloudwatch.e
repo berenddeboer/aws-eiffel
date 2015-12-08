@@ -66,7 +66,9 @@ feature -- CloudWatch API
 			data.put_last (new_signature (http_method_POST, cloudwatch_path, data))
 			create form.make_form_urlencoded (data.to_array)
 			post (cloudwatch_path, form)
-			read_response
+			if is_open then
+				read_response
+			end
 		end
 
 	put_metric_data (a_name_space: READABLE_STRING_GENERAL; a_data_points: DS_LINEAR [AWS_METRIC_DATUM])
@@ -117,7 +119,9 @@ feature -- CloudWatch API
 			data.put_last (new_signature (http_method_POST, cloudwatch_path, data))
 			create form.make_form_urlencoded (data.to_array)
 			post (cloudwatch_path + "?Action=PutMetricData", form)
-			read_response
+			if is_open then
+				read_response
+			end
 		end
 
 
@@ -129,7 +133,6 @@ feature {NONE} -- Implementation
 			a_name_space_not_empty: a_name_space /= Void and then not a_name_space.is_empty
 		local
 			kv: EPX_KEY_VALUE
-			now: STDC_TIME
 		do
 			Result := new_action (an_action)
 			create kv.make ("Namespace", a_name_space.out)
