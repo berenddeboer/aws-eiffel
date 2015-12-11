@@ -24,9 +24,9 @@ feature -- Access
 		local
 			env: EPX_ENV_VAR
 		once
-			create env.make (once "AWS_ACCESS_KEY_ID")
+			create env.make ("AWS_ACCESS_KEY_ID")
 			if not env.is_set then
-				create env.make (once "S3_ACCESS_KEY_ID")
+				create env.make ("S3_ACCESS_KEY_ID")
 			end
 			Result := env.value
 			if Result.is_empty then
@@ -43,9 +43,9 @@ feature -- Access
 		local
 			env: STDC_ENV_VAR
 		once
-			create env.make (once "AWS_SECRET_ACCESS_KEY")
+			create env.make ("AWS_SECRET_ACCESS_KEY")
 			if not env.is_set then
-				create env.make (once "S3_SECRET_ACCESS_KEY")
+				create env.make ("S3_SECRET_ACCESS_KEY")
 			end
 			Result := env.value
 			if Result.is_empty then
