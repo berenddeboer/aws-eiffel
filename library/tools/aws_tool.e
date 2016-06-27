@@ -97,7 +97,7 @@ feature -- Argument parsing
 			region.set_description ("Region.")
 			region.set_parameter_description ("region")
 			parser.options.force_last (region)
-			region.set_default_value (default_region)
+			region.set_default_parameter (default_region)
 		end
 
 	validate_arguments
