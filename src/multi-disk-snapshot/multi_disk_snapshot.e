@@ -49,7 +49,6 @@ feature -- Help
 			until
 				parser.parameters.after
 			loop
-				--volume_id := "vol-3d3cba60"
 				volume_id := parser.parameters.item_for_iteration
 				create ec2.make (access_key, secret_access_key, region.parameter)
 				data := ec2.new_action ("CreateSnapshot")
