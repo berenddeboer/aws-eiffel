@@ -93,7 +93,7 @@ feature -- Argument parsing
 			create verbose.make ('v', "verbose")
 			verbose.set_description ("Verbose output like progress.")
 			parser.options.force_last (verbose)
-			create region.make ('r', "region")
+			create region.make_with_long_form ("region")
 			region.set_description ("Region.")
 			region.set_parameter_description ("region")
 			parser.options.force_last (region)
