@@ -33,7 +33,7 @@ feature -- Access
 		end
 
 
-feature {NONE} -- Parse ~/.aws/credentials
+feature {NONE} -- Parse ~/.aws/config
 
 	parse_aws_config: TUPLE [region: STRING]
 		local
