@@ -21,13 +21,19 @@ inherit
 
 	SUS_SYSTEM
 
+	AWS_ACCESS_KEY
+
+	AWS_REGION
+		rename
+			region as default_region
+		end
+
 
 feature {NONE} -- Initialize
 
 	make
 			-- Initialize and print exception if exception occurs.
 		do
-			set_environment_variables
 			parse_arguments
 			make_no_rescue
 		rescue
@@ -48,11 +54,6 @@ feature {NONE} -- Initialize
 		end
 
 
-feature -- Access
-
-	default_region: STRING = "us-east-1"
-
-
 feature -- Argument parsing
 
 	parser: AP_PARSER
@@ -69,10 +70,6 @@ feature -- Argument parsing
 
 	verbose: AP_FLAG
 			-- Should command-line utility be verbose
-
-	access_key: STRING
-
-	secret_access_key: STRING
 
 	parse_arguments
 			-- Create parser, and parse given arguments.
@@ -105,32 +102,15 @@ feature -- Argument parsing
 		require
 			not_void: parser /= Void
 		do
-			if access_key.is_empty then
-				stderr.put_line ("Environment variable AWS_ACCESS_KEY not set. It should contain your Amazon access key.")
+			if access_key_id.is_empty then
+				stderr.put_line ("Environment variable AWS_ACCESS_KEY_ID not set. It should contain your Amazon access key.")
 				parser.help_option.display_usage (parser)
 			end
 			if secret_access_key.is_empty then
-				stderr.put_line ("Environment variable AWS_SECRET_KEY not set. It should contain your Amazon secret access key.")
+				stderr.put_line ("Environment variable AWS_SECRET_ACCESS_KEY not set. It should contain your Amazon secret access key.")
 				parser.help_option.display_usage (parser)
 			end
 		end
 
-
-feature -- Environment variables
-
-	aws_access_key: STRING = "AWS_ACCESS_KEY_ID"
-
-	aws_secret_key: STRING = "AWS_SECRET_ACCESS_KEY"
-
-	set_environment_variables
-		local
-			key,
-			secret_key: EPX_ENV_VAR
-		do
-			create key.make (aws_access_key)
-			access_key := key.value
-			create secret_key.make (aws_secret_key)
-			secret_access_key := secret_key.value
-		end
 
 end

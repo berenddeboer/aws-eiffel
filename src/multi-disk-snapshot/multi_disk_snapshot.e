@@ -50,7 +50,7 @@ feature -- Help
 				parser.parameters.after
 			loop
 				volume_id := parser.parameters.item_for_iteration
-				create ec2.make (access_key, secret_access_key, region.parameter)
+				create ec2.make (access_key_id, secret_access_key, region.parameter)
 				data := ec2.new_action ("CreateSnapshot")
 				create kv.make ("VolumeId", volume_id.out)
 				data.put_last (kv)
