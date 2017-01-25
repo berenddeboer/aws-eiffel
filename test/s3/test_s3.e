@@ -1,4 +1,4 @@
-indexing
+note
 
 	description:
 
@@ -24,7 +24,7 @@ inherit
 
 feature -- Tests
 
-	test_get_data is
+	test_get_data
 		local
 			s3: S3_CLIENT
 			f: STDC_TEXT_FILE
@@ -44,9 +44,9 @@ feature -- Tests
 
 feature {NONE} -- Implementation
 
-	key: STRING is "drupalfocus-20080812T22.20.43.manifest.xml"
+	key: STRING = "drupalfocus-20080812T22.20.43.manifest.xml"
 
-	access_key_id: STRING is
+	access_key_id: STRING
 		local
 			env: STDC_ENV_VAR
 		once
@@ -54,7 +54,7 @@ feature {NONE} -- Implementation
 			Result := env.value
 		end
 
-	secret_access_key: STRING is
+	secret_access_key: STRING
 		local
 			env: STDC_ENV_VAR
 		once

@@ -1,4 +1,4 @@
-indexing
+note
 
 	description:
 
@@ -36,7 +36,7 @@ create
 
 feature {NONE} -- Initialize
 
-	make is
+	make
 		do
 			make_no_rescue
 		rescue
@@ -49,7 +49,7 @@ feature {NONE} -- Initialize
 			exit_with_failure
 		end
 
-	make_no_rescue is
+	make_no_rescue
 		local
 			s3: S3_CLIENT
 			reading_parts: BOOLEAN
@@ -121,7 +121,7 @@ feature {NONE} -- Initialize
 
 feature -- Access
 
-	buffer_size: INTEGER is 16384
+	buffer_size: INTEGER = 16384
 
 	bucket: AP_STRING_OPTION
 
@@ -132,7 +132,7 @@ feature -- Access
 
 feature {NONE} -- Argument parsing
 
-	parse_arguments is
+	parse_arguments
 		local
 			parser: AP_PARSER
 		do
@@ -165,7 +165,7 @@ feature {NONE} -- Argument parsing
 
 feature {NONE} -- Implementation
 
-	print_http_response_header (s3: S3_CLIENT) is
+	print_http_response_header (s3: S3_CLIENT)
 		require
 			s3_not_void: s3 /= Void
 		do
@@ -177,7 +177,7 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	print_download_speed (bytes_received: INTEGER_64; start_time: STDC_TIME) is
+	print_download_speed (bytes_received: INTEGER_64; start_time: STDC_TIME)
 		local
 			now: STDC_TIME
 			duration: INTEGER
@@ -201,7 +201,7 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	read_object (in: EPX_TEXT_IO_STREAM; buffer: STDC_BUFFER; an_object_size: INTEGER_64) is
+	read_object (in: EPX_TEXT_IO_STREAM; buffer: STDC_BUFFER; an_object_size: INTEGER_64)
 			-- Read a single object of size `an_object_size'.
 		require
 			in_not_void: in /= Void

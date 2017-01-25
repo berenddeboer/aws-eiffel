@@ -25,7 +25,7 @@ inherit
 
 feature -- Helpers
 
-	formatted_upload_speed (bytes_send: INTEGER_64; start_time: STDC_TIME): STRING is
+	formatted_upload_speed (bytes_send: INTEGER_64; start_time: STDC_TIME): STRING
 			-- Nicely format average speed.
 		require
 			bytes_send_not_negative: bytes_send >= 0
