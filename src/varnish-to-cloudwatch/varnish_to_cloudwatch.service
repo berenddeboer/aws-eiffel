@@ -1,0 +1,17 @@
+[Unit]
+Description=Varnish to AWS CloudWatch logger
+After=network.target varnish.service
+
+[Service]
+Type=notify
+ExecStart=/usr/local/sbin/varnish_to_cloudwatch
+ProtectSystem=full
+ProtectHome=read-only
+PrivateTmp=true
+PrivateDevices=true
+WatchdogSec=120s
+Restart=on-failure
+User=root
+
+[Install]
+WantedBy=multi-user.target

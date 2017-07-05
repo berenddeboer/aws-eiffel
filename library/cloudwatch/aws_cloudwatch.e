@@ -39,9 +39,6 @@ feature {NONE} -- Initialisation
 
 feature -- Access
 
-	--aws_cloudwatch_host_name: STRING = "monitoring.amazonaws.com"
-	--aws_cloudwatch_host_name: STRING = "monitoring.us-east-1.amazonaws.com"
-
 	version: STRING = "2010-08-01"
 			-- API version
 
