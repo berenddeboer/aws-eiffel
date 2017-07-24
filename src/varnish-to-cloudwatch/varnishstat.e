@@ -180,7 +180,9 @@ feature {NONE} -- Implementation
 				data_points.put_last (data_point)
 				cloudwatch.put_metric_data ("varnish", data_points)
 				if not cloudwatch.is_response_ok then
-					stderr.put_line (cloudwatch.response_code.out + " " + cloudwatch.response_phrase)
+					if attached cloudwatch.response_phrase as rp then
+						stderr.put_line (cloudwatch.response_code.out + " " + rp)
+					end
 					stderr.put_string (cloudwatch.response.as_string)
 				end
 			else
