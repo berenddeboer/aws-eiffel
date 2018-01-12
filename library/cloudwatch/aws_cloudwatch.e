@@ -27,13 +27,13 @@ create
 
 feature {NONE} -- Initialisation
 
-	make (an_access_key_id, a_secret_access_key, a_region: READABLE_STRING_GENERAL)
+	make (a_region: READABLE_STRING_GENERAL)
 		require
-			access_key_has_correct_length: an_access_key_id /= Void and then an_access_key_id.count = 20
-			secret_key_has_correct_length: a_secret_access_key /= Void and then a_secret_access_key.count = 40
+			access_key_has_correct_length: access_key_id /= Void and then access_key_id.count = 20
+			secret_key_has_correct_length: secret_access_key /= Void and then secret_access_key.count = 40
 			a_region_not_empty: a_region /= Void and then not a_region.is_empty
 		do
-			make_aws_base ("monitoring." + a_region.out + ".amazonaws.com", an_access_key_id, a_secret_access_key)
+			make_aws_base ("monitoring." + a_region.out + ".amazonaws.com")
 		end
 
 
@@ -69,6 +69,9 @@ feature -- CloudWatch API
 		end
 
 	put_metric_data (a_name_space: READABLE_STRING_GENERAL; a_data_points: DS_LINEAR [AWS_METRIC_DATUM])
+			-- Note: there are some odd requirements for valid characters
+			-- in a_name_space, I think the CloudWatch console doesn't
+			-- like comma's for example.
 		require
 			a_name_space_not_empty: a_name_space /= Void and then not a_name_space.is_empty
 			a_data_points_not_void: a_data_points /= Void

@@ -25,7 +25,7 @@
 		<library name="eposix" location="${EPOSIX}\eposix.ecf"  readonly="false"/>
 		<external_object location="-lsystemd"/>
 		<library name="aws-eiffel" location="$AWS_EIFFEL\library\library.ecf" readonly="false"/>
-		<library name="jrs" location="$JRS\library\library.ecf" readonly="false"/>
+		<library name="jrs" location="$JRS\library\jrs.ecf" readonly="false"/>
 		<cluster name="varnish_to_cloudwatch" location=".\" recursive="true"/>
 	</target>
 </system>

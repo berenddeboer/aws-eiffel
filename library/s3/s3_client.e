@@ -8,8 +8,6 @@ note
 	author: "Berend de Boer <berend@pobox.com>"
 	copyright: "Copyright (c) 2008-2011, Berend de Boer"
 	license: "MIT License (see LICENSE)"
-	date: "$Date$"
-	revision: "$Revision$"
 
 
 class
@@ -239,7 +237,7 @@ feature -- Accesss
 
 feature {NONE} -- Implementation
 
-	append_other_fields (a_verb, a_path: STRING; a_request_data: EPX_MIME_PART; request: STRING)
+	append_other_fields (a_verb, a_path: STRING; a_request_data: detachable EPX_MIME_PART; request: STRING)
 		local
 			now: STDC_TIME
 			date: STRING

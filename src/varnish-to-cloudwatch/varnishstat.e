@@ -173,7 +173,7 @@ feature {NONE} -- Implementation
 			data_point: AWS_METRIC_DATUM
 		do
 			if a_value >= 0 then
-				create cloudwatch.make (access_key_id, secret_access_key, region)
+				create cloudwatch.make (region)
 				create data_points.make
 				create data_point.make (name, a_value, a_unit, now)
 				data_point.add_dimension ("hostname", hostname)

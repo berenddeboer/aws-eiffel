@@ -22,30 +22,25 @@ inherit
 			make as make_http_11_client
 		end
 
+
+inherit {NONE}
+
 	UT_URL_ENCODING
-		export
-			{NONE} all
-		end
+
+	AWS_ACCESS_KEY
 
 
 feature {NONE} -- Initialiation
 
-	make_aws_base (a_server_name, an_access_key_id, a_secret_access_key: READABLE_STRING_GENERAL)
+	make_aws_base (a_server_name: READABLE_STRING_GENERAL)
 		require
-			access_key_has_correct_length: an_access_key_id /= Void and then an_access_key_id.count = 20
-			secret_key_has_correct_length: a_secret_access_key /= Void and then a_secret_access_key.count = 40
+			access_key_has_correct_length: access_key_id /= Void and then access_key_id.count = 20
+			secret_key_has_correct_length: secret_access_key /= Void and then secret_access_key.count = 40
 		do
 			make_http_11_client (a_server_name.out)
 			-- make_secure (a_server_name)
-			access_key_id := an_access_key_id
-			create hasher.make (a_secret_access_key.out, create {EPX_SHA1_CALCULATION}.make)
+			create hasher.make (secret_access_key.out, create {EPX_SHA1_CALCULATION}.make)
 		end
-
-
-feature -- Access
-
-	access_key_id: READABLE_STRING_GENERAL
-			-- Access Key ID (a 20-character, alphanumeric sequence)
 
 
 feature -- Request signing
@@ -78,9 +73,14 @@ feature -- Request signing
 			hasher.put_string (string_to_sign (a_verb, a_path, a_data))
 			hasher.finalize
 
-			Result := as_base64 (hasher.binary_checksum)
+			if attached hasher.binary_checksum as bcs then
+				Result := as_base64 (bcs)
+			else
+				-- silence void-safe compiler
+				Result := ""
+			end
 		ensure
-			not_empty: Result /= Void and then not Result.is_empty
+			not_empty: attached Result and then not Result.is_empty
 		end
 
 	string_to_sign (a_verb, a_path: READABLE_STRING_GENERAL; a_data: DS_LINEAR [EPX_KEY_VALUE]): STRING
@@ -163,7 +163,7 @@ feature -- Methods
 		end
 
 	new_action (an_action: READABLE_STRING_GENERAL): DS_LINKED_LIST [EPX_KEY_VALUE]
-			-- key/value pairs for action `an_action'
+			-- Key/value pairs for action `an_action'
 		require
 			an_action_not_empty: an_action /= Void and then not an_action.is_empty
 		local
@@ -185,13 +185,18 @@ feature -- Methods
 			Result.put_last (kv)
 			create kv.make ("AWSAccessKeyId", access_key_id.out)
 			Result.put_last (kv)
+			-- IAM role support
+			if not iam_role_token.is_empty then
+				create kv.make ("SecurityToken", iam_role_token)
+				Result.put_last (kv)
+			end
 		ensure
 			not_void: Result /= Void
 		end
 
+
 invariant
 
-	valid_access_key: access_key_id /= Void and then access_key_id.count = 20
 	hasher_not_void: hasher /= Void
 
 end

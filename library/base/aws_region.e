@@ -17,16 +17,22 @@ class
 
 feature -- Access
 
-	region: STRING
+	region: READABLE_STRING_GENERAL
 			-- Default region;
-			-- Uses AWS_REGION if set, else tries to read ~/.aws/config
+			-- Uses AWS_REGION if set, else tries to read ~/.aws/config,
+			-- and if that is not available, read instance metadata.
 		local
 			env: EPX_ENV_VAR
+			metadata: AWS_METADATA
 		once
 			create env.make ("AWS_REGION")
 			Result := env.value
 			if Result.is_empty then
 				Result := parse_aws_config.region
+				if Result.is_empty then
+					create metadata
+					Result := metadata.region
+				end
 			end
 		ensure
 			not_void: Result /= Void

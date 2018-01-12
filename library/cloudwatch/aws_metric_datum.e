@@ -22,7 +22,7 @@ create
 
 feature {NONE} -- Initialisation
 
-	make (a_name: READABLE_STRING_GENERAL; a_value: DOUBLE; a_unit: READABLE_STRING_GENERAL; a_timestamp: EPX_TIME)
+	make (a_name: READABLE_STRING_GENERAL; a_value: DOUBLE; a_unit: READABLE_STRING_GENERAL; a_timestamp: detachable EPX_TIME)
 			-- If timestamp not set, it is initialised to now.
 			-- `a_unit' values: Seconds | Microseconds | Milliseconds |
 			-- Bytes | Kilobytes | Megabytes | Gigabytes | Terabytes |
@@ -38,12 +38,13 @@ feature {NONE} -- Initialisation
 			name := a_name
 			value := a_value
 			unit := a_unit
-			if a_timestamp = Void then
+			if not attached a_timestamp then
 				create timestamp.make_from_now
 				timestamp.to_utc
 			else
 				timestamp := a_timestamp
 			end
+			create dimensions.make (2)
 		end
 
 
@@ -81,7 +82,7 @@ feature -- Status
 
 	is_valid_name (a_name: READABLE_STRING_GENERAL): BOOLEAN
 		do
-			Result := a_name /= Void and then not a_name.is_empty and then a_name.count <= 255
+			Result := attached a_name and then not a_name.is_empty and then a_name.count <= 255
 		end
 
 	is_valid_unit (a_unit: READABLE_STRING_GENERAL): BOOLEAN
@@ -99,9 +100,6 @@ feature -- Change
 			a_name_not_empty: a_name /= Void and then not a_name.is_empty
 			a_value_not_empty: a_value /= Void and then not a_value.is_empty
 		do
-			if dimensions = Void then
-				create dimensions.make (2)
-			end
 			dimensions.force_last (a_value, a_name)
 		ensure
 			dimensions_not_void: dimensions /= Void
