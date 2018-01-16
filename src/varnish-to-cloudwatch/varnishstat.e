@@ -25,6 +25,11 @@ inherit
 
 	AWS_REGION
 
+	AWS_METADATA
+		rename
+			region as metadata_region
+		end
+
 
 create
 
@@ -39,6 +44,7 @@ feature {NONE} -- Initialisation
 			create varnish_record
 			create previous_values.make_default
 			create new_values.make_default
+			create now.make_from_now
 		end
 
 
@@ -110,7 +116,7 @@ feature -- Commands
 			create now.make_from_now
 			now.to_utc
 			exec ("varnishstat -1 -t 0" + field_parameters (counters) + field_parameters (diff_counters)).as_tuples (varnish_record, ' ').each (agent investigate_varnish_field)
-			if new_values.count > 0 then
+			if new_values.count > 0 and previous_values.count > 0 then
 				misses := new_value  ("MAIN.cache_miss") - previous_value ("MAIN.cache_miss")
 				hits := new_value  ("MAIN.cache_hit") - previous_value ("MAIN.cache_hit")
 				hitrate := (hits / (hits + misses)) * 100
@@ -151,17 +157,17 @@ feature {NONE} -- Implementation
 		local
 			diff: INTEGER_64
 		do
-			if attached l.last_item.field as name then
+			if attached l.last_item as item and then attached item.field as name then
 				if counters.has (name) then
-					publish_varnish_field (name, l.last_item.value, "Count")
+					publish_varnish_field (name, item.value, "Count")
 				else
 					previous_values.search (name)
 					if previous_values.found then
-						diff := l.last_item.value - previous_values.found_item.value
+						diff := item.value - previous_values.found_item.value
 						publish_varnish_field (name, diff, "Count")
 					end
 				end
-				new_values.put (l.last_item, name)
+				new_values.put (item, name)
 			end
 		end
 
@@ -176,14 +182,16 @@ feature {NONE} -- Implementation
 				create cloudwatch.make (region)
 				create data_points.make
 				create data_point.make (name, a_value, a_unit, now)
-				data_point.add_dimension ("hostname", hostname)
+				data_point.add_dimension ("InstanceId", instance_id)
 				data_points.put_last (data_point)
 				cloudwatch.put_metric_data ("varnish", data_points)
 				if not cloudwatch.is_response_ok then
 					if attached cloudwatch.response_phrase as rp then
 						stderr.put_line (cloudwatch.response_code.out + " " + rp)
 					end
-					stderr.put_string (cloudwatch.response.as_string)
+					if attached cloudwatch.response as response then
+						stderr.put_string (response.as_string)
+					end
 				end
 			else
 				-- Some sanity protection, this can happen if varnish
