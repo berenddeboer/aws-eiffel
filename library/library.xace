@@ -20,4 +20,8 @@
     <cluster name="tools"/>
   </cluster>
 
+  <cluster name="json" location="$ISE_LIBRARY/contrib/library/text/parser/json/library">
+    <option name="recursive" value="true"/>
+  </cluster>
+
 </library>
