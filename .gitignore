@@ -4,6 +4,7 @@
 *.log
 *.melted
 *.sh
+*.make
 compile_ise.ecf
 compile_se.ace
 compile_ge.xace

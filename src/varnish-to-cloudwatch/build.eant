@@ -1,0 +1,19 @@
+<?xml version="1.0"?>
+
+<project name="varnish_to_cloudwatch" inherit="${GOBO}/misc/eiffel.eant" default="help">
+
+  <description>
+    system:      "Log Varnish statistics to AWS CloudWatch."
+    author:      "Berend de Boer [berend@pobox.com]"
+    copyright:   "Copyright (c) 2018, Berend de Boer"
+  </description>
+
+
+<!-- Implementation -->
+
+  <target name="init_system">
+    <set name="system" value="varnish_to_cloudwatch"/>
+    <set name="system_dir" value="."/>
+  </target>
+
+</project>

@@ -1,0 +1,40 @@
+<?xml version="1.0"?>
+
+<system name="varnish_to_cloudwatch">
+  <description>
+    system:      "Log Varnish statistics to AWS CloudWatch."
+    author:      "Berend de Boer [berend@pobox.com]"
+    copyright:   "Copyright (c) 2018, Berend de Boer"
+  </description>
+
+  <root class="VARNISH_TO_CLOUDWATCH" creation="make"/>
+  <option name="console_application" value="true"/>
+  <option name="syntax" value="standard"/>
+  <option name="void_safety" value="complete"/>
+
+  <option unless="${DEBUG}">
+    <option name="assertion" value="none"/>
+    <option name="garbage_collector" value="none"/>
+    <option name="finalize" value="true"/>
+    <option name="exception_trace" value="true"/>
+  </option>
+  <option if="${DEBUG}">
+    <option name="split" value="false"/>
+    <option name="debug" value="true"/>
+    <option name="debug_tag" value="jrs"/>
+    <option name="assertion" value="all"/>
+    <option name="garbage_collector" value="none"/>
+    <option name="finalize" value="false"/>
+  </option>
+
+  <cluster name="me" location="."/>
+
+  <mount name="jrs" location="${JRS}/library/library.xace"/>
+  <mount name="aws" location="${AWS_EIFFEL}/library/library.xace"/>
+  <mount location="${EPOSIX}/src/library.xace"/>
+  <mount location="${GOBO}/library/library.xace"/>
+  <mount location="${GOBO}/library/kernel.xace"/>
+
+  <option name="link" value="-lsystemd"/>
+
+</system>
