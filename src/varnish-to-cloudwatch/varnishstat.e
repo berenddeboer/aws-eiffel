@@ -18,6 +18,9 @@ inherit
 
 	JRS
 
+
+inherit {NONE}
+
 	AWS_ACCESS_KEY
 		export
 			{NONE} all
@@ -78,21 +81,39 @@ feature -- Access
 			-- How many objects have been forcefully evicted from storage
 			-- to make room for a new object.
 			Result.force ("MAIN.n_lru_nuked")
+			-- Count of incoming sessions successfully accepted
 			Result.force ("MAIN.sess_conn")
-			-- Number of times session was queued waiting for a thread.
+			-- Number of times incoming session was queued waiting for a thread.
 			Result.force ("MAIN.sess_queued")
+			-- Number of times incoming session was dropped because the queue were too long already.
+			Result.force ("MAIN.sess_dropped")
+			-- The count of parseable client requests seen.
 			Result.force ("MAIN.client_req")
+			-- Count of cache hits.  A cache hit indicates that an object
+			-- has been delivered to a client without fetching it from a
+			-- backend server.
 			Result.force ("MAIN.cache_hit")
+			-- Count of misses A cache miss indicates the object was
+			-- fetched from the backend before delivering it to the
+			-- backend.
 			Result.force ("MAIN.cache_miss")
 			-- Number of times Varnish couldn't "ping" the backend (it
 			-- didn't respond with a HTTP 200 response.
 			Result.force ("MAIN.backend_unhealthy")
 			-- Number of times Varnish couldn't connect to the backend.
 			Result.force ("MAIN.backend_fail")
+			-- Backend requests made
 			Result.force ("MAIN.backend_req")
+			-- Fetch EOF: beresp.body with EOF.
 			Result.force ("MAIN.fetch_eof")
+			--  Fetch bad T-E: beresp.body length/fetch could not be determined.
 			Result.force ("MAIN.fetch_bad")
+			-- Fetch failed (all causes): beresp fetch failed.
 			Result.force ("MAIN.fetch_failed")
+			-- Fetch no body: beresp.body empty
+			Result.force ("MAIN.fetch_none")
+			--  Fetch failed (no thread): beresp fetch failed, no thread available.
+			Result.force ("MAIN.fetch_no_thread")
 		end
 
 	previous_values: DS_HASH_TABLE [like varnish_record, READABLE_STRING_GENERAL]
@@ -145,10 +166,10 @@ feature {NONE} -- Implementation
 		end
 
 	varnish_record: TUPLE [
-		field: string;
-		value: INTEGER_64;
-		average: STRING;
-		description: STRING
+		field: detachable STRING
+		value: INTEGER_64
+		average: detachable STRING
+		description: detachable STRING
 	]
 
 	investigate_varnish_field (l: JRS_TRANSFORMING_ITERATOR [READABLE_STRING_GENERAL, like varnish_record]): BOOLEAN

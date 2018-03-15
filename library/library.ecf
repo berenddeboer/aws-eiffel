@@ -2,7 +2,7 @@
 <system xmlns="http://www.eiffel.com/developers/xml/configuration-1-16-0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.eiffel.com/developers/xml/configuration-1-16-0 http://www.eiffel.com/developers/xml/configuration-1-16-0.xsd" name="aws_eiffel" uuid="3b4956ed-21c9-465c-bbcf-a00ed7ecafff" library_target="aws_eiffel">
 	<target name="aws_eiffel">
 		<root all_classes="true"/>
-		<option warning="true" full_class_checking="true" void_safety="none" syntax="standard">
+		<option warning="true" full_class_checking="true" syntax="standard">
     </option>
 		<capability>
 			<void_safety support="all" use="all"/>

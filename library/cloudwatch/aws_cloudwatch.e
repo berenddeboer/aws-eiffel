@@ -2,7 +2,7 @@ note
 
 	description:
 
-		"Interface to Amazon CloudWatch"
+		"Basic interface to Amazon CloudWatch"
 
 	library: "Amazon CloudWatch library"
 	author: "Berend de Boer <berend@pobox.com>"
@@ -18,6 +18,8 @@ class
 inherit
 
 	AWS_BASE
+
+	AWS_CLOUDWATCH_CHECKS
 
 
 create
@@ -50,7 +52,7 @@ feature -- CloudWatch API
 
 	list_metrics (a_name_space, a_metric_name: READABLE_STRING_GENERAL)
 		require
-			a_name_space_not_empty: a_name_space /= Void and then not a_name_space.is_empty
+			a_name_space_not_empty: is_valid_name_space (a_name_space)
 			a_metric_name_not_empty: a_metric_name /= Void and then not a_metric_name.is_empty
 		local
 			kv: EPX_KEY_VALUE
@@ -70,11 +72,11 @@ feature -- CloudWatch API
 
 	put_metric_data (a_name_space: READABLE_STRING_GENERAL; a_data_points: DS_LINEAR [AWS_METRIC_DATUM])
 			-- Note: there are some odd requirements for valid characters
-			-- in a_name_space, I think the CloudWatch console doesn't
+			-- in `a_name_space', I think the CloudWatch console doesn't
 			-- like comma's for example.
 		require
-			a_name_space_not_empty: a_name_space /= Void and then not a_name_space.is_empty
-			a_data_points_not_void: a_data_points /= Void
+			a_name_space_not_empty: is_valid_name_space (a_name_space)
+			not_too_many_data_points: a_data_points.count <= 20
 		local
 			i, j: INTEGER
 			kv: EPX_KEY_VALUE

@@ -33,6 +33,9 @@ feature {NONE} -- Initialisation
 			-- Gigabits/Second | Terabits/Second | Count/Second | None
 		require
 			name_not_empty: is_valid_name (a_name)
+			value_is_a_number: not a_value.is_nan
+			value_is_not_negative_infinity: not a_value.is_negative_infinity
+			value_is_not_positive_infinity: not a_value.is_positive_infinity
 			unit_valid: is_valid_unit (a_unit)
 		do
 			name := a_name
