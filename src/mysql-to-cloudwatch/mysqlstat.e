@@ -142,6 +142,7 @@ feature -- Commands
 			com_selects: INTEGER_64
 			qcache_efficiency: DOUBLE
 			threads_created: INTEGER_64
+			thread_cache_miss_rate: DOUBLE
 			table_open_cache_hits,
 			table_open_cache_misses: INTEGER_64
 			table_cache_hit_rate: DOUBLE
@@ -171,14 +172,21 @@ feature -- Commands
 				com_selects := new_value  ("Com_select") - previous_value ("Com_select")
 				qcache_hits := new_value  ("Qcache_hits") - previous_value ("Qcache_hits")
 				qcache_efficiency := (qcache_hits / (com_selects + qcache_hits)) * 100
-				name_space.add_data_point ("Qcache efficiency", qcache_efficiency, "Percent")
+				if qcache_efficiency >= 0 then
+					name_space.add_data_point ("Qcache efficiency", qcache_efficiency, "Percent")
+				end
 
 				-- Thread cache statistics
 				-- What percentage of connections required a new thread to
 				-- be created.
 				-- See also: https://serverfault.com/a/729353/100718
-				threads_created := new_value  ("Threads_created") - previous_value ("Threads_created")
-				name_space.add_data_point ("Thread cache miss rate", (threads_created / connections) * 100, "Percent")
+				if connections > 0 then
+					threads_created := new_value  ("Threads_created") - previous_value ("Threads_created")
+					thread_cache_miss_rate := (threads_created / connections) * 100
+				else
+					thread_cache_miss_rate := 0
+				end
+				name_space.add_data_point ("Thread cache miss rate", thread_cache_miss_rate, "Percent")
 
 				-- Table cache statistics
 				table_open_cache_hits := new_value  ("Table_open_cache_hits") - previous_value ("Table_open_cache_hits")
@@ -252,8 +260,8 @@ feature {NONE} -- Implementation
 			seconds: INTEGER_64
 		do
 			seconds_behind := a_row.fields.item ("Seconds_Behind_Master")
-			if not seconds_behind.is_integer_64 then
-				seconds :=seconds_behind.to_integer_64
+			if seconds_behind.is_integer_64 then
+				seconds := seconds_behind.to_integer_64
 			else
 				seconds := 3600
 			end
