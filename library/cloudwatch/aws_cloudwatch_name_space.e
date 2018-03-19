@@ -96,18 +96,16 @@ feature -- Commands
 			if data_points.count <= 20 then
 				do_publish (data_points)
 			else
-				from
-					create ds.make
-					data_points.start
-				until
-					data_points.after
+				create ds.make
+				across data_points as c
+				invariant
+					ds.count <= 20
 				loop
-					ds.put_last (data_points.item_for_iteration)
+					ds.put_last (c.item)
 					if ds.count = 20 then
 						do_publish (ds)
 						ds.wipe_out
 					end
-					ds.forth
 				end
 				if not ds.is_empty then
 					do_publish (ds)
