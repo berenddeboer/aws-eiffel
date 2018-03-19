@@ -87,6 +87,8 @@ feature -- Commands
 
 	publish
 			-- Publish all data points in `data_points' to AWS CloudWatch.
+			-- Sets `is_publish_failure' if there was any error
+			-- publishing data.
 		require
 			something_to_publish: not data_points.is_empty
 		local
@@ -97,28 +99,36 @@ feature -- Commands
 				do_publish (data_points)
 			else
 				create ds.make
-				across data_points as c
+				from
+					is_publish_failure := False
+					data_points.start
 				invariant
 					ds.count <= 20
+				until
+					data_points.after or else is_publish_failure
 				loop
-					ds.put_last (c.item)
+					ds.put_last (data_points.item_for_iteration)
 					if ds.count = 20 then
 						do_publish (ds)
 						ds.wipe_out
 					end
+					data_points.forth
 				end
-				if not ds.is_empty then
+				if not is_publish_failure and then not ds.is_empty then
 					do_publish (ds)
 				end
 			end
-			is_publish_failure := not cloudwatch.is_response_ok
 		end
 
 	do_publish (a_data_points: like data_points)
+			-- Publish the maximum allowed data points to AWS CloudWatch.
+			-- Sets `is_publish_failure' if there was any error
+			-- publishing data.
 		require
 			no_overflow: a_data_points.count <= 20
 		do
 			cloudwatch.put_metric_data (name_space, a_data_points)
+			is_publish_failure := not cloudwatch.is_response_ok
 		end
 
 	wipe_out
