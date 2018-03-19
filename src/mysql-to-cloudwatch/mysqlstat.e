@@ -59,18 +59,12 @@ feature -- Access
 			-- Counters which are reported as is
 		once
 			create Result.make_equal (4)
+			Result.put ("Max_used_connections")
 			-- The number of threads that are not sleeping.
 			Result.put ("Threads_running")
 			-- The number of currently open connections.
 			Result.put ("Threads_connected")
 			-- Result.put ("Qcache_queries_in_cache")
-		end
-
-	ignored_counters: DS_HASH_SET [READABLE_STRING_8]
-			-- Counters which are queried, but only used in calculations.
-		once
-			create Result.make_equal (1)
-			Result.put ("Max_used_connections")
 		end
 
 	diff_counters: DS_HASH_SET [READABLE_STRING_8]
@@ -91,6 +85,41 @@ feature -- Access
 			-- COM_PING or COM_STATISTICS commands.
 			Result.force ("Queries")
 			Result.force ("Com_select")
+
+			-- The number of misses for open tables cache lookups
+			Result.force ("Table_open_cache_misses")
+			-- The number of misses for open tables cache lookups
+			Result.force ("Table_open_cache_hits")
+
+			-- Locks
+			-- The number of times that a request for a table lock could
+			-- be granted immediately.
+			Result.force ("Table_locks_immediate")
+			-- The number of times that a request for a table lock could
+			-- not be granted immediately and a wait was needed. If this
+			-- is high and you have performance problems, you should
+			-- first optimize your queries, and then either split your
+			-- table or tables or use replication.
+			Result.force ("Table_locks_waited")
+
+			-- Internal in-memory temporary tables
+			Result.force ("Created_tmp_tables")
+			Result.force ("Created_tmp_files")
+			Result.force ("Created_tmp_disk_tables")
+
+			-- InnoDB
+			Result.force ("Innodb_buffer_pool_wait_free")
+			Result.force ("Innodb_log_waits")
+		end
+
+	ignored_counters: DS_HASH_SET [READABLE_STRING_8]
+			-- Any counters in `counters' or `diff_counters' not sent to
+			-- AWS CloudWatch, but only used for calculations.
+		once
+			create Result.make_equal (3)
+			Result.put ("Max_used_connections")
+			Result.put ("Table_open_cache_hits")
+			Result.put ("Table_locks_immediate")
 		end
 
 	previous_values: DS_HASH_TABLE [INTEGER_64, READABLE_STRING_GENERAL]
@@ -113,12 +142,22 @@ feature -- Commands
 			com_selects: INTEGER_64
 			qcache_efficiency: DOUBLE
 			threads_created: INTEGER_64
+			table_open_cache_hits,
+			table_open_cache_misses: INTEGER_64
+			table_cache_hit_rate: DOUBLE
+			tmp_tables,
+			tmp_disk_tables: INTEGER_64
 		do
+			debug ("mysql_to_cloudwatch")
+				print ("GATHERING%N")
+			end
 			name_space.wipe_out
 			previous_values := new_values
 			create new_values.make (64)
-			query ("mysqlcheck", "show global status where Variable_name in (" + field_parameters (counters) + ", " + field_parameters (ignored_counters) + ", " + field_parameters (diff_counters) + ")", Void, mysql_status).rows (agent publish_mysql_status)
+			query ("mysqlcheck", "show global status where Variable_name in (" + field_parameters (counters) + ", " + field_parameters (diff_counters) + ")", Void, mysql_status).rows (agent publish_mysql_status)
 			query ("mysqlcheck", "show slave status", Void, slave_status).rows (agent publish_mysql_slave_status)
+
+			-- Log calculated values
 			if new_values.count > 0 and previous_values.count > 0 then
 				set_row ("mysqlcheck", "show global variables where Variable_name = 'max_connections'", Void, mysql_status)
 				max_connections := mysql_status.value
@@ -127,14 +166,38 @@ feature -- Commands
 				connections_in_use := (connections / max_connections) * 100
 				name_space.add_data_point ("Max used connections", max_connections_used, "Percent")
 				name_space.add_data_point ("Connections in use", connections_in_use, "Percent")
+
+				-- Query cache statistics
 				com_selects := new_value  ("Com_select") - previous_value ("Com_select")
 				qcache_hits := new_value  ("Qcache_hits") - previous_value ("Qcache_hits")
 				qcache_efficiency := (qcache_hits / (com_selects + qcache_hits)) * 100
 				name_space.add_data_point ("Qcache efficiency", qcache_efficiency, "Percent")
+
+				-- Thread cache statistics
+				-- What percentage of connections required a new thread to
+				-- be created.
+				-- See also: https://serverfault.com/a/729353/100718
 				threads_created := new_value  ("Threads_created") - previous_value ("Threads_created")
 				name_space.add_data_point ("Thread cache miss rate", (threads_created / connections) * 100, "Percent")
+
+				-- Table cache statistics
+				table_open_cache_hits := new_value  ("Table_open_cache_hits") - previous_value ("Table_open_cache_hits")
+				table_open_cache_misses := new_value  ("Table_open_cache_misses") - previous_value ("Table_open_cache_misses")
+				table_cache_hit_rate := (table_open_cache_hits / (table_open_cache_hits + table_open_cache_misses)) * 100
+				name_space.add_data_point ("Table cache hit rate", table_cache_hit_rate, "Percent")
+
+				-- Internal in-memory temporary tables
+				tmp_tables := new_value  ("Created_tmp_tables") - previous_value ("Created_tmp_tables")
+				tmp_disk_tables := new_value  ("Created_tmp_disk_tables") - previous_value ("Created_tmp_disk_tables")
+				name_space.add_data_point ("Temporary tables created on disk rate", (tmp_disk_tables / tmp_tables) * 100, "Percent")
+			end
+			debug ("mysql_to_cloudwatch")
+				print ("PUBLISHING%N")
 			end
 			name_space.publish
+			debug ("mysql_to_cloudwatch")
+				print ("DONE PUBLISHING%N")
+			end
 			if name_space.is_publish_failure then
 				stderr.put_line (name_space.cloudwatch.response_code.out + " " + name_space.cloudwatch.response_phrase)
 				if attached name_space.cloudwatch.response as r then
