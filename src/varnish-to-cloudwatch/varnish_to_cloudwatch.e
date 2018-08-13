@@ -26,7 +26,7 @@ create
 
 feature -- Access
 
-	application_description: STRING = "Every minute sent varnish stats to AWS CloudWatch"
+	application_description: STRING = "Every thirty seconds sent varnish stats to AWS CloudWatch"
 
 
 feature -- Execute
@@ -65,6 +65,6 @@ feature -- Execute
 			sd_notify_stopping
 		end
 
-	interval: INTEGER = 60
+	interval: INTEGER = 30
 
 end

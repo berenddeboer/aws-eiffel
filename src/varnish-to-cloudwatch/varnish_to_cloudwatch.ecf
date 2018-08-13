@@ -20,7 +20,7 @@
 			<void_safety support="all" use="all"/>
 		</capability>
 		<external_object location="-lsystemd"/>
-		<precompile name="base_pre" location="$ISE_PRECOMP\base-mt-safe.ecf"/>
+		<!-- <precompile name="base_pre" location="$ISE_PRECOMP\base-mt-safe.ecf"/> -->
 		<library name="aws-eiffel" location="$AWS_EIFFEL\library\library.ecf" readonly="false"/>
 		<library name="base" location="$ISE_LIBRARY\library\base\base.ecf"/>
 		<library name="eposix" location="${EPOSIX}\eposix.ecf" readonly="false"/>
