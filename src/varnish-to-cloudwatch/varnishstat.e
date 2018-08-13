@@ -48,6 +48,7 @@ feature {NONE} -- Initialisation
 			create previous_values.make_default
 			create new_values.make_default
 			create now.make_from_now
+			create name_space.make ("varnish")
 		end
 
 
@@ -132,6 +133,7 @@ feature -- Commands
 			hits: INTEGER_64
 			hitrate: DOUBLE
 		do
+			name_space.wipe_out
 			previous_values := new_values
 			create new_values.make (64)
 			create now.make_from_now
@@ -142,6 +144,14 @@ feature -- Commands
 				hits := new_value  ("MAIN.cache_hit") - previous_value ("MAIN.cache_hit")
 				hitrate := (hits / (hits + misses)) * 100
 				publish_varnish_field ("hitrate", hitrate, "Percent")
+			end
+			name_space.publish
+			if name_space.is_publish_failure then
+				stderr.put_line (name_space.cloudwatch.response_code.out + " " + name_space.cloudwatch.response_phrase)
+				if attached name_space.cloudwatch.response as r then
+					stderr.put_string (r.as_string)
+				end
+				--exit_with_failure
 			end
 		end
 
@@ -194,26 +204,9 @@ feature {NONE} -- Implementation
 
 	publish_varnish_field (name: STRING; a_value: DOUBLE; a_unit: STRING)
 			-- Send a value to CloudWatch.
-		local
-			cloudwatch: AWS_CLOUDWATCH
-			data_points: DS_LINKED_LIST [AWS_METRIC_DATUM]
-			data_point: AWS_METRIC_DATUM
 		do
 			if a_value >= 0 then
-				create cloudwatch.make (region)
-				create data_points.make
-				create data_point.make (name, a_value, a_unit, now)
-				data_point.add_dimension ("InstanceId", instance_id)
-				data_points.put_last (data_point)
-				cloudwatch.put_metric_data ("varnish", data_points)
-				if not cloudwatch.is_response_ok then
-					if attached cloudwatch.response_phrase as rp then
-						stderr.put_line (cloudwatch.response_code.out + " " + rp)
-					end
-					if attached cloudwatch.response as response then
-						stderr.put_string (response.as_string)
-					end
-				end
+				name_space.add_data_point (name, a_value, a_unit)
 			else
 				-- Some sanity protection, this can happen if varnish
 				-- gets restarted, so old values apply to previous instance.
@@ -236,5 +229,10 @@ feature {NONE} -- Implementation
 				Result := new_values.found_item.value
 			end
 		end
+
+
+feature {NONE} -- AWS Cloudwatch
+
+	name_space: AWS_CLOUDWATCH_NAME_SPACE
 
 end

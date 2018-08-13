@@ -74,6 +74,10 @@ feature -- CloudWatch API
 			-- Note: there are some odd requirements for valid characters
 			-- in `a_name_space', I think the CloudWatch console doesn't
 			-- like comma's for example.
+			-- Check `is_response_ok` if there were errors during publishing.
+			-- NOTE: In many cases it's better to call
+			-- AWS_CLOUDWATCH_NAME_SPACE.publish as that does batching of
+			-- requests.
 		require
 			a_name_space_not_empty: is_valid_name_space (a_name_space)
 			not_too_many_data_points: a_data_points.count <= 20
