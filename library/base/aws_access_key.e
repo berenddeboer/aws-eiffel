@@ -45,7 +45,7 @@ feature -- Access
 	secret_access_key: READABLE_STRING_GENERAL
 			-- AWS secret access key, if available, else empty string;
 			-- Tries to determine this first from an environment variable,
-			-- secondly it looks at ~/.aws/credentials.
+			-- secondly it looks at ~/.aws/credentials, finally it checks IAM role.
 		do
 			if are_credentials_expired then
 				refresh_iam_role_credentials
