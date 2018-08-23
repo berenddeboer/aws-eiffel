@@ -29,13 +29,13 @@ create
 
 feature {NONE} -- Initialisation
 
-	make (a_region: READABLE_STRING_GENERAL)
+	make (a_region: READABLE_STRING_8)
 		require
 			access_key_has_correct_length: access_key_id /= Void and then access_key_id.count = 20
 			secret_key_has_correct_length: secret_access_key /= Void and then secret_access_key.count = 40
 			a_region_not_empty: a_region /= Void and then not a_region.is_empty
 		do
-			make_aws_base ("monitoring." + a_region.out + ".amazonaws.com")
+			make_aws_base (a_region)
 		end
 
 
@@ -45,12 +45,14 @@ feature -- Access
 			-- API version
 
 	cloudwatch_path: STRING = "/"
-	--cloudwatch_path: STRING = "/doc/2010-08-01"
 
+	service: STRING = "monitoring"
+
+	granite_service_version: STRING = "GraniteServiceVersion20100801"
 
 feature -- CloudWatch API
 
-	list_metrics (a_name_space, a_metric_name: READABLE_STRING_GENERAL)
+	list_metrics (a_name_space, a_metric_name: READABLE_STRING_8)
 		require
 			a_name_space_not_empty: is_valid_name_space (a_name_space)
 			a_metric_name_not_empty: a_metric_name /= Void and then not a_metric_name.is_empty
@@ -58,11 +60,11 @@ feature -- CloudWatch API
 			kv: EPX_KEY_VALUE
 			data: DS_LINKED_LIST [EPX_KEY_VALUE]
 			form: EPX_MIME_FORM
+			--form: EPX_MIME_PART
 		do
 			data := new_data ("ListMetrics", a_name_space)
 			create kv.make ("MetricName", a_metric_name.out)
 			data.put_last (kv)
-			data.put_last (new_signature (http_method_POST, cloudwatch_path, data))
 			create form.make_form_urlencoded (data.to_array)
 			post (cloudwatch_path, form)
 			if is_open then
@@ -70,7 +72,7 @@ feature -- CloudWatch API
 			end
 		end
 
-	put_metric_data (a_name_space: READABLE_STRING_GENERAL; a_data_points: DS_LINEAR [AWS_METRIC_DATUM])
+	put_metric_data (a_name_space: READABLE_STRING_8; a_data_points: DS_LINEAR [AWS_METRIC_DATUM])
 			-- Note: there are some odd requirements for valid characters
 			-- in `a_name_space', I think the CloudWatch console doesn't
 			-- like comma's for example.
@@ -122,9 +124,9 @@ feature -- CloudWatch API
 			variant
 				a_data_points.count - i + 1
 			end
-			data.put_last (new_signature (http_method_POST, cloudwatch_path, data))
+			--data.put_last (new_signature (http_method_POST, cloudwatch_path, data))
 			create form.make_form_urlencoded (data.to_array)
-			post (cloudwatch_path + "?Action=PutMetricData", form)
+			post (cloudwatch_path, form)
 			if is_open then
 				read_response
 			end
@@ -133,7 +135,7 @@ feature -- CloudWatch API
 
 feature {NONE} -- Implementation
 
-	new_data (an_action, a_name_space: READABLE_STRING_GENERAL): DS_LINKED_LIST [EPX_KEY_VALUE]
+	new_data (an_action, a_name_space: READABLE_STRING_8): DS_LINKED_LIST [EPX_KEY_VALUE]
 		require
 			an_action_not_empty: an_action /= Void and then not an_action.is_empty
 			a_name_space_not_empty: a_name_space /= Void and then not a_name_space.is_empty

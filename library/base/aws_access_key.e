@@ -26,7 +26,7 @@ inherit {NONE}
 
 feature -- Access
 
-	access_key_id: READABLE_STRING_GENERAL
+	access_key_id: READABLE_STRING_8
 			-- AWS access key if available, else empty string;
 			-- Tries to determine this first from an environment variable,
 			-- secondly it looks at ~/.aws/credentials, and finally at
@@ -42,7 +42,7 @@ feature -- Access
 			valid: Result.is_empty or else Result.count = 20
 		end
 
-	secret_access_key: READABLE_STRING_GENERAL
+	secret_access_key: READABLE_STRING_8
 			-- AWS secret access key, if available, else empty string;
 			-- Tries to determine this first from an environment variable,
 			-- secondly it looks at ~/.aws/credentials, finally it checks IAM role.
