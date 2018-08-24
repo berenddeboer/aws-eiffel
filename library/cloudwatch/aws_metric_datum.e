@@ -37,6 +37,7 @@ feature {NONE} -- Initialisation
 			value_is_not_negative_infinity: not a_value.is_negative_infinity
 			value_is_not_positive_infinity: not a_value.is_positive_infinity
 			unit_valid: is_valid_unit (a_unit)
+			timestamp_valid: attached a_timestamp as ts implies is_valid_timestamp (ts)
 		do
 			name := a_name
 			value := a_value
@@ -93,6 +94,17 @@ feature -- Status
 			Result := a_unit /= Void and then not a_unit.is_empty
 		end
 
+	is_valid_timestamp (a_timestamp: EPX_TIME): BOOLEAN
+			-- Is timestamp within the past two weeks.
+		local
+			not_older_than_two_weeks: BOOLEAN
+			now: EPX_TIME
+		do
+			create now.make_from_now
+			not_older_than_two_weeks := now.value - a_timestamp.value >= two_weeks
+			Result := not_older_than_two_weeks
+		end
+
 
 feature -- Change
 
@@ -108,5 +120,10 @@ feature -- Change
 			dimensions_not_void: dimensions /= Void
 			dimension_added: dimensions.has (a_name)
 		end
+
+
+feature {NONE} -- Implementation
+
+	two_weeks: INTEGER = 1209600
 
 end

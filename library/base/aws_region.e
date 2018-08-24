@@ -17,7 +17,7 @@ class
 
 feature -- Access
 
-	region: READABLE_STRING_GENERAL
+	region: READABLE_STRING_8
 			-- Default region;
 			-- Uses AWS_REGION if set, else tries to read ~/.aws/config,
 			-- and if that is not available, read instance metadata.

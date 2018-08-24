@@ -90,7 +90,6 @@ feature {NONE} -- Implementation
 			l_query_items: like as_sorted
 			v: STRING
 			sha256: SHA256
-			u: UT_URI_STRING
 		do
 			Result := ""
 

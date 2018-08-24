@@ -124,7 +124,6 @@ feature -- CloudWatch API
 			variant
 				a_data_points.count - i + 1
 			end
-			--data.put_last (new_signature (http_method_POST, cloudwatch_path, data))
 			create form.make_form_urlencoded (data.to_array)
 			post (cloudwatch_path, form)
 			if is_open then

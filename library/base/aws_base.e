@@ -71,14 +71,19 @@ feature -- Request signing
 				timestamp := now.as_iso_8601_without_formatting.out
 			end
 			append_field (a_request, x_amz_date, timestamp)
-			headers := create {DS_HASH_TABLE [STRING, STRING]}.make_equal (2)
+			headers := create {DS_HASH_TABLE [STRING, STRING]}.make_equal (4)
 			headers.put (server_name, field_name_host)
 			headers.put (timestamp, x_amz_date)
+			-- Access `access_key_id' as this sets the token
+			if not access_key_id.is_empty and then not iam_role_token.is_empty then
+				headers.put (iam_role_token, x_amz_security_token)
+				append_field (a_request, x_amz_security_token, iam_role_token)
+			end
 
 			if attached a_request_data as part then
 				part.header.fields.search (field_name_content_type)
 				if part.header.fields.found then
-					headers.force (part.header.fields.found_item.value, field_name_content_type)
+					headers.put (part.header.fields.found_item.value, field_name_content_type)
 				end
 				-- Purely to pass test in TEST_AWS_SIGNATURE_V4
 				if part.header.fields.has ("My-Header1") then
@@ -124,7 +129,6 @@ feature {NONE} -- Action
 			an_action_not_empty: an_action /= Void and then not an_action.is_empty
 		local
 			kv: EPX_KEY_VALUE
-			now: STDC_TIME
 		do
 			create Result.make
 			create kv.make ("Action", an_action)
@@ -132,7 +136,8 @@ feature {NONE} -- Action
 			create kv.make ("Version", version)
 			Result.put_last (kv)
 			-- IAM role support
-			-- if not iam_role_token.is_empty then
+			-- Get access_key_id first, so token is refreshed
+			-- if not access_key_id.is_empty and then not iam_role_token.is_empty then
 			-- 	create kv.make ("SecurityToken", iam_role_token)
 			-- 	Result.put_last (kv)
 			-- end
@@ -144,5 +149,7 @@ feature -- Field names
 	x_amz_date: STRING = "X-Amz-Date"
 
 	x_amz_target: STRING = "X-Amz-Target"
+
+	x_amz_security_token: STRING = "X-Amz-Security-Token"
 
 end

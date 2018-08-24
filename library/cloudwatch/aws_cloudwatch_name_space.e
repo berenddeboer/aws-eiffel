@@ -38,7 +38,7 @@ create
 
 feature {NONE} -- Initialisation
 
-	make (a_name_space: READABLE_STRING_GENERAL)
+	make (a_name_space: READABLE_STRING_8)
 		require
 			valid_name_space: is_valid_name_space (a_name_space)
 		do
@@ -54,7 +54,7 @@ feature -- Access
 
 	cloudwatch: AWS_CLOUDWATCH
 
-	name_space: READABLE_STRING_GENERAL
+	name_space: READABLE_STRING_8
 
 	data_points: DS_LINKED_LIST [AWS_METRIC_DATUM]
 			-- Current data points

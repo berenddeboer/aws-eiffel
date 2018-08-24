@@ -8,7 +8,7 @@
       <void_safety support="all" use="all"/>
       <concurrency support="none" use="none"/>
     </capability>
-    <library name="base" location="$ISE_LIBRARY/library/base/base.ecf"/>
+    <library name="base" location="iron:base:base.ecf" />
     <library name="gobo_kernel" location="$GOBO/library/kernel/library.ecf"/>
     <library name="gobo_argument" location="$GOBO\library\argument/library.ecf"/>
     <library name="gobo_math" location="$GOBO/library/math/library.ecf"/>

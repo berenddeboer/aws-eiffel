@@ -43,7 +43,7 @@ feature -- Access
 			Result := value ("/latest/meta-data/placement/availability-zone")
 		end
 
-	region: READABLE_STRING_GENERAL
+	region: READABLE_STRING_8
 			-- Region determined from `availability_zone';
 			-- Will fail if amazon gets more than 26 availability zones;
 			-- Returns empty string if data could not be accessed.

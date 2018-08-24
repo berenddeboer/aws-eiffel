@@ -1,5 +1,5 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
-<system xmlns="http://www.eiffel.com/developers/xml/configuration-1-16-0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.eiffel.com/developers/xml/configuration-1-16-0 http://www.eiffel.com/developers/xml/configuration-1-16-0.xsd" name="varnish_to_cloudwatch" uuid="4CC41443-4866-40E2-BAED-0F53CB8F8846">
+<system xmlns="http://www.eiffel.com/developers/xml/configuration-1-18-0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.eiffel.com/developers/xml/configuration-1-18-0 http://www.eiffel.com/developers/xml/configuration-1-18-0.xsd" name="varnish_to_cloudwatch" uuid="4CC41443-4866-40E2-BAED-0F53CB8F8846">
 	<target name="varnish_to_cloudwatch">
 		<root class="VARNISH_TO_CLOUDWATCH" feature="make"/>
 		<file_rule>
@@ -8,7 +8,8 @@
 			<exclude>/\.git$</exclude>
 			<exclude>/\.svn$</exclude>
 		</file_rule>
-		<option debug="false" warning="true" syntax="standard">
+		<option debug="false" warning="true" syntax="standard" manifest_array_type="mismatch_warning">
+			<debug name="aws" enabled="true"/>
 			<debug name="cloudwatch" enabled="true"/>
 			<assertions precondition="true" postcondition="true" check="true" invariant="true" loop="true" supplier_precondition="true"/>
 		</option>
@@ -20,14 +21,19 @@
 			<void_safety support="all" use="all"/>
 		</capability>
 		<external_object location="-lsystemd"/>
-		<!-- <precompile name="base_pre" location="$ISE_PRECOMP\base-mt-safe.ecf"/> -->
-		<library name="aws-eiffel" location="$AWS_EIFFEL\library\library.ecf" readonly="false"/>
-		<library name="base" location="$ISE_LIBRARY\library\base\base.ecf"/>
-		<library name="eposix" location="${EPOSIX}\eposix.ecf" readonly="false"/>
-		<library name="gobo_argument" location="$ISE_LIBRARY\library\gobo\gobo_argument.ecf"/>
-		<library name="gobo_kernel" location="$ISE_LIBRARY\library\gobo\gobo_kernel.ecf"/>
-		<library name="gobo_structure" location="$ISE_LIBRARY\library\gobo\gobo_structure.ecf"/>
-		<library name="jrs" location="$JRS\library\jrs.ecf" readonly="false"/>
+		<library name="aws-eiffel" location="$AWS_EIFFEL\library\library-gobo.ecf" readonly="false">
+			<option debug="false">
+				<debug name="aws" enabled="true"/>
+			</option>
+		</library>
+		<library name="base" location="iron:base:base.ecf"/>
+		<library name="eposix" location="${EPOSIX}\eposix-gobo.ecf" readonly="false">
+			<option debug="false">
+				<debug name="http_client" enabled="true"/>
+			</option>
+		</library>
+		<library name="gobo_structure" location="$GOBO\library\structure\library.ecf"/>
+		<library name="jrs" location="$JRS\library\jrs-gobo.ecf" readonly="false"/>
 		<cluster name="varnish_to_cloudwatch" location=".\" recursive="true"/>
 	</target>
 </system>
