@@ -153,6 +153,8 @@ feature {NONE} -- Cached values
 		end
 
 	iam_role_token: STRING
+			-- IAM role token if any;
+			-- Set by `refresh_iam_role_credentials'
 		once
 			create Result.make_empty
 		end
