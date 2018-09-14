@@ -81,7 +81,9 @@ feature -- Commands
 			data_point: AWS_METRIC_DATUM
 		do
 			create data_point.make (a_name, a_value, a_unit, timestamp)
-			data_point.add_dimension ("InstanceId", instance_id)
+			if not instance_id.is_empty then
+				data_point.add_dimension ("InstanceId", instance_id)
+			end
 			data_points.put_last (data_point)
 		end
 
