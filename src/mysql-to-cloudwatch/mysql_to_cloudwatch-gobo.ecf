@@ -1,0 +1,50 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<system xmlns="http://www.eiffel.com/developers/xml/configuration-1-18-0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.eiffel.com/developers/xml/configuration-1-18-0 http://www.eiffel.com/developers/xml/configuration-1-18-0.xsd" name="mysql_to_cloudwatch" uuid="7F17E6A8-F3B5-435C-9324-CC0D17C10A54">
+  <target name="mysql_to_cloudwatch">
+    <root class="MYSQL_TO_CLOUDWATCH" feature="make"/>
+    <file_rule>
+      <exclude>/CVS$</exclude>
+      <exclude>/EIFGENs$</exclude>
+      <exclude>/\.git$</exclude>
+      <exclude>/\.svn$</exclude>
+    </file_rule>
+    <option debug="false" warning="true" syntax="standard" manifest_array_type="mismatch_warning">
+      <debug name="mysql_to_cloudwatch" enabled="false"/>
+      <assertions precondition="true" postcondition="true" check="true" invariant="true" loop="true" supplier_precondition="true"/>
+    </option>
+    <setting name="console_application" value="true"/>
+    <setting name="exception_trace" value="true"/>
+    <capability>
+      <catcall_detection use="none"/>
+      <concurrency support="none" use="thread"/>
+      <void_safety support="all" use="all"/>
+    </capability>
+    <external_object location="-lsystemd"/>
+    <precompile name="base_pre" location="$ISE_PRECOMP\base-mt-safe.ecf"/>
+    <library name="aws-eiffel" location="$AWS_EIFFEL\library\library-gobo.ecf" readonly="false">
+      <option>
+        <assertions precondition="true" postcondition="true" check="true" invariant="true" loop="true" supplier_precondition="true"/>
+      </option>
+    </library>
+    <library name="base" location="$ISE_LIBRARY\library\base\base.ecf"/>
+    <library name="eposix" location="${EPOSIX}\eposix-gobo.ecf" readonly="false">
+      <option>
+        <assertions precondition="true" postcondition="true" check="true" invariant="true" loop="true" supplier_precondition="true"/>
+      </option>
+    </library>
+    <!-- <library name="gobo_argument" location="$ISE_LIBRARY\library\gobo\gobo_argument.ecf"/> -->
+    <!-- <library name="gobo_kernel" location="$ISE_LIBRARY\library\gobo\gobo_kernel.ecf"/> -->
+    <library name="gobo_structure" location="$GOBO/library/structure/library.ecf"/>
+    <library name="jrs" location="$JRS\library\jrs-gobo.ecf" readonly="false">
+      <option>
+        <assertions precondition="true" postcondition="true" check="true" invariant="true" loop="true" supplier_precondition="true"/>
+      </option>
+    </library>
+    <library name="jrs_ecli" location="$JRS\library\ecli\jrs_ecli-gobo.ecf" readonly="false">
+      <option>
+        <assertions precondition="true" postcondition="true" check="true" invariant="true" loop="true" supplier_precondition="true"/>
+      </option>
+    </library>
+    <cluster name="mysql_to_cloudwatch" location=".\" recursive="true"/>
+  </target>
+</system>
