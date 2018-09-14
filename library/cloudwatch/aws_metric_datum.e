@@ -97,12 +97,12 @@ feature -- Status
 	is_valid_timestamp (a_timestamp: EPX_TIME): BOOLEAN
 			-- Is timestamp within the past two weeks.
 		local
-			not_older_than_two_weeks: BOOLEAN
+			older_than_two_weeks: BOOLEAN
 			now: EPX_TIME
 		do
 			create now.make_from_now
-			not_older_than_two_weeks := now.value - a_timestamp.value >= two_weeks
-			Result := not_older_than_two_weeks
+			older_than_two_weeks := now.value - a_timestamp.value >= two_weeks
+			Result := not older_than_two_weeks
 		end
 
 
@@ -112,7 +112,7 @@ feature -- Change
 			-- The Dimension data type further expands on the identity of
 			-- a metric using a Name, Value pair.
 		require
-			a_name_not_empty: a_name /= Void and then not a_name.is_empty
+			valid_name: is_valid_name (a_name)
 			a_value_not_empty: a_value /= Void and then not a_value.is_empty
 		do
 			dimensions.force_last (a_value, a_name)

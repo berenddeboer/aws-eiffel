@@ -47,7 +47,6 @@ feature {NONE} -- Initialisation
 			create varnish_record
 			create previous_values.make_default
 			create new_values.make_default
-			create now.make_from_now
 			create name_space.make ("varnish")
 		end
 
@@ -136,8 +135,6 @@ feature -- Commands
 			name_space.wipe_out
 			previous_values := new_values
 			create new_values.make (64)
-			create now.make_from_now
-			now.to_utc
 			exec ("varnishstat -1 -t 0" + field_parameters (counters) + field_parameters (diff_counters)).as_tuples (varnish_record, ' ').each (agent investigate_varnish_field)
 			if new_values.count > 0 and previous_values.count > 0 then
 				misses := new_value  ("MAIN.cache_miss") - previous_value ("MAIN.cache_miss")
@@ -145,21 +142,20 @@ feature -- Commands
 				hitrate := (hits / (hits + misses)) * 100
 				publish_varnish_field ("hitrate", hitrate, "Percent")
 			end
-			name_space.publish
-			if name_space.is_publish_failure then
-				stderr.put_line (name_space.cloudwatch.response_code.out + " " + name_space.cloudwatch.response_phrase)
-				if attached name_space.cloudwatch.response as r then
-					stderr.put_string (r.as_string)
+			if not name_space.data_points.is_empty then
+				name_space.publish
+				if name_space.is_publish_failure then
+					stderr.put_line (name_space.cloudwatch.response_code.out + " " + name_space.cloudwatch.response_phrase)
+					if attached name_space.cloudwatch.response as r then
+						stderr.put_string (r.as_string)
+					end
+					--exit_with_failure
 				end
-				--exit_with_failure
 			end
 		end
 
 
 feature {NONE} -- Implementation
-
-	now: EPX_TIME
-			-- Time whan varnishstat was last called
 
 	field_parameters (c: DS_LINEAR [READABLE_STRING_8]): STRING
 		do

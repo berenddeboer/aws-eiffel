@@ -8,9 +8,7 @@
 			<exclude>/\.git$</exclude>
 			<exclude>/\.svn$</exclude>
 		</file_rule>
-		<option debug="false" warning="true" syntax="standard" manifest_array_type="mismatch_warning">
-			<debug name="aws" enabled="true"/>
-			<debug name="cloudwatch" enabled="true"/>
+		<option debug="true" warning="true" syntax="standard" manifest_array_type="mismatch_warning">
 			<assertions precondition="true" postcondition="true" check="true" invariant="true" loop="true" supplier_precondition="true"/>
 		</option>
 		<setting name="console_application" value="true"/>
@@ -22,18 +20,28 @@
 		</capability>
 		<external_object location="-lsystemd"/>
 		<library name="aws-eiffel" location="$AWS_EIFFEL\library\library-gobo.ecf" readonly="false">
-			<option debug="false">
+			<option debug="true">
 				<debug name="aws" enabled="true"/>
+				<assertions precondition="true" postcondition="true" check="true" invariant="true" loop="true" supplier_precondition="true"/>
 			</option>
 		</library>
 		<library name="base" location="iron:base:base.ecf"/>
 		<library name="eposix" location="${EPOSIX}\eposix-gobo.ecf" readonly="false">
-			<option debug="false">
+			<option debug="true">
 				<debug name="http_client" enabled="true"/>
+				<assertions precondition="true" postcondition="true" check="true" invariant="true" loop="true" supplier_precondition="true"/>
 			</option>
 		</library>
-		<library name="gobo_structure" location="$GOBO\library\structure\library.ecf"/>
-		<library name="jrs" location="$JRS\library\jrs-gobo.ecf" readonly="false"/>
+		<library name="gobo_structure" location="$GOBO\library\structure\library.ecf">
+			<option>
+				<assertions precondition="true"/>
+			</option>
+		</library>
+		<library name="jrs" location="$JRS\library\jrs-gobo.ecf" readonly="false">
+			<option>
+				<assertions precondition="true" postcondition="true" check="true" invariant="true" loop="true" supplier_precondition="true"/>
+			</option>
+		</library>
 		<cluster name="varnish_to_cloudwatch" location=".\" recursive="true"/>
 	</target>
 </system>
