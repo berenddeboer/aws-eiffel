@@ -17,6 +17,8 @@ class
 
 inherit
 
+	ANY
+
 	ST_FORMATTING_ROUTINES
 		export
 			{NONE} all

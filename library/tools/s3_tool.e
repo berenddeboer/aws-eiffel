@@ -18,14 +18,22 @@ deferred class
 
 inherit
 
+	EPX_CURRENT_PROCESS
+
+
+inherit {NONE}
+
 	AWS_ACCESS_KEY
+
+	AWS_REGION
+		rename
+			region as default_region
+		end
 
 	S3_VERBOSE_ROUTINES
 		export
 			{NONE} all
 		end
-
-	EPX_CURRENT_PROCESS
 
 
 feature {NONE} -- Initialize
@@ -36,7 +44,9 @@ feature {NONE} -- Initialize
 			make_no_rescue
 		rescue
 			if exceptions.is_developer_exception then
-				fd_stderr.put_line (exceptions.developer_exception_name)
+				if attached exceptions.developer_exception_name as name then
+					fd_stderr.put_line (name)
+				end
 			else
 				fd_stderr.put_string (once "Exception code: ")
 				fd_stderr.put_line (exceptions.exception.out)
@@ -52,7 +62,9 @@ feature {NONE} -- Initialize
 
 feature -- Access
 
-	region: AP_STRING_OPTION
+	region: STRING
+
+	region_option: AP_STRING_OPTION
 
 	bucket: AP_STRING_OPTION
 
@@ -75,10 +87,10 @@ feature -- Command-line parsing
 			bucket.set_description ("Bucket name.")
 			bucket.enable_mandatory
 			Result.options.force_last (bucket)
-			create region.make ('r', "region")
-			region.set_description ("Region.")
-			Result.options.force_last (region)
-			create reduced_redundancy.make ('d', "reduced-redundancy")
+			create region_option.make ('r', "region")
+			region_option.set_description ("Region.")
+			Result.options.force_last (region_option)
+			create reduced_redundancy.make_with_long_form ("reduced-redundancy")
 			reduced_redundancy.set_description ("Region.")
 			Result.options.force_last (reduced_redundancy)
 			create verbose.make ('v', "verbose")
@@ -92,14 +104,23 @@ feature -- Command-line parsing
 			-- Parse arguments.
 		require
 			not_void: a_parser /= Void
+			valid_options: a_parser.valid_options
 		do
 			a_parser.parse_arguments
+			if region_option.occurrences > 0 then
+				region := region_option.parameter.out
+			elseif not default_region.is_empty then
+				region := default_region
+			else
+				fd_stderr.put_line ("Region not set. Please define it in ~/.aws/config or pass the --region parameter.")
+				a_parser.help_option.display_usage (a_parser)
+			end
 			if access_key_id.is_empty then
-				fd_stderr.put_line ("Environment variable S3_ACCESS_KEY_ID not set. It should contain your Amazon access key.")
+				fd_stderr.put_line ("Access key not set. Please define it in ~/.aws/config.")
 				a_parser.help_option.display_usage (a_parser)
 			end
 			if secret_access_key.is_empty then
-				fd_stderr.put_line ("Environment variable S3_SECRET_ACCESS_KEY not set. It should contain your Amazon secret access key.")
+				fd_stderr.put_line ("Secret key not set. Please define it in ~/.aws/credentials.")
 				a_parser.help_option.display_usage (a_parser)
 			end
 		end

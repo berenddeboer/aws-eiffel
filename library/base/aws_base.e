@@ -38,6 +38,7 @@ feature {NONE} -- Initialiation
 		require
 			access_key_not_empty: not access_key_id.is_empty
 			secret_key_has_correct_length: secret_access_key.count = 40
+			a_region_not_empty: not a_region.is_empty
 		local
 			l_server_name: STRING
 		do
@@ -135,12 +136,6 @@ feature {NONE} -- Action
 			Result.put_last (kv)
 			create kv.make ("Version", version)
 			Result.put_last (kv)
-			-- IAM role support
-			-- Get access_key_id first, so token is refreshed
-			-- if not access_key_id.is_empty and then not iam_role_token.is_empty then
-			-- 	create kv.make ("SecurityToken", iam_role_token)
-			-- 	Result.put_last (kv)
-			-- end
 		end
 
 

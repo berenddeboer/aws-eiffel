@@ -18,11 +18,20 @@
     <library name="gobo_structure" location="$GOBO/library/structure/library.ecf"/>
     <library name="gobo_time" location="$GOBO/library/time/library.ecf"/>
     <library name="gobo_utility" location="$GOBO\library\utility\library.ecf" readonly="false"/>
-    <!-- <library name="gobo_xml" location="$GOBO/library/xml/library.ecf"/> -->
+    <!-- gobo_xml used by documents directory -->
+    <library name="gobo_xml" location="$GOBO/library/xml/library.ecf"/>
     <library name="json" location="$ISE_LIBRARY/contrib/library/text/parser/json/library/json.ecf"/>
-    <library name="eposix" location="${EPOSIX}/eposix-gobo.ecf"/>
+    <library name="eposix" location="${EPOSIX}\eposix-gobo.ecf" readonly="false">
+      <option debug="true">
+        <debug name="http_client" enabled="true"/>
+        <assertions precondition="true" postcondition="true" check="true" invariant="true" loop="true" supplier_precondition="true"/>
+      </option>
+    </library>
 
     <library name="crypto" location="iron:crypto:crypto.ecf" />
+
+    <cluster name="gedxml" location="$GEDXML" recursive="true"/>
+
     <cluster name="aws_eiffel" location="." recursive="true">
     </cluster>
   </target>

@@ -26,12 +26,12 @@ feature -- Template reuse
 
 	wipe_out
 		do
-			InitiateMultipartUploadResult := Void
+			create InitiateMultipartUploadResult
 		end
 
 feature -- Element matching
 
-	root_start_matcher: DS_HASH_TABLE [PROCEDURE [ANY, TUPLE []], STRING]
+	root_start_matcher: DS_HASH_TABLE [PROCEDURE [TUPLE], STRING]
 		once
 			create Result.make (1)
 			Result.put (agent
@@ -43,14 +43,14 @@ feature -- Element matching
 				end, once "InitiateMultipartUploadResult")
 		end
 
-	InitiateMultipartUploadResult_start_matchers: DS_HASH_TABLE [PROCEDURE [ANY, TUPLE []], STRING]
+	InitiateMultipartUploadResult_start_matchers: DS_HASH_TABLE [PROCEDURE [TUPLE], STRING]
 		once
 			create Result.make (0)
 		ensure
 			not_void: Result /= Void
 		end
 
-	InitiateMultipartUploadResult_end_matchers: DS_HASH_TABLE [PROCEDURE [ANY, TUPLE [STRING]], STRING]
+	InitiateMultipartUploadResult_end_matchers: DS_HASH_TABLE [PROCEDURE [TUPLE [STRING]], STRING]
 		once
 			create Result.make (4)
 			Result.put (agent (s: STRING)

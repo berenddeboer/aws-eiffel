@@ -17,12 +17,13 @@ class
 
 inherit
 
-	EPX_HTTP_11_CLIENT
-		rename
-			make as make_http_11_client
+	AWS_BASE
 		redefine
 			append_other_fields
 		end
+
+
+inherit {NONE}
 
 	UC_SHARED_STRING_EQUALITY_TESTER
 		export
@@ -38,23 +39,33 @@ create
 
 feature {NONE} -- Initialization
 
-	make (an_access_key_id, a_secret_access_key, a_region, a_bucket: STRING)
+	make (a_region, a_bucket: READABLE_STRING_8)
 		require
-			access_key_has_correct_length: an_access_key_id /= Void and then an_access_key_id.count = 20
-			secret_key_has_correct_length: a_secret_access_key /= Void and then a_secret_access_key.count = 40
-			a_bucket_not_empty: a_bucket /= Void and then not a_bucket.is_empty
+			access_key_not_empty: not access_key_id.is_empty
+			secret_key_has_correct_length: secret_access_key.count = 40
+			a_region_not_empty: not a_region.is_empty
+		local
+			l_server_name: STRING
 		do
-			region := a_region
 			bucket := a_bucket
-			if region = Void or else region.is_empty then
-				s3_host_name := bucket + ".s3.amazonaws.com"
-			else
-				s3_host_name := bucket + ".s3-" + region + ".amazonaws.com"
-			end
-			make_http_11_client (s3_host_name)
-			access_key_id := an_access_key_id
-			create hasher.make (a_secret_access_key, create {EPX_SHA1_CALCULATION}.make)
+			region := a_region
+			l_server_name := bucket + ".s3." + region + ".amazonaws.com"
+			make_secure (l_server_name)
 		end
+
+
+feature -- Access
+
+	max_retries: INTEGER = 5
+			-- How often should requests be retried
+
+	service: STRING = "s3"
+
+	bucket: READABLE_STRING_8
+			-- Bucket
+
+	version: STRING
+			-- Not used.
 
 
 feature -- Amazon primitives
@@ -97,9 +108,11 @@ feature -- Multipart upload
 			not_secure: not is_secure_connection
 		local
 			d: INITIATEMULTIPARTUPLOADRESULT_DOCUMENT
+			empty: EPX_MIME_PART
 		do
 			create parts.make
-			post ("/" + an_object_name + "?uploads", Void)
+			create empty.make_empty
+			post ("/" + an_object_name + "?uploads", empty)
 			read_response
 			if is_response_ok then
 				create d.make_from_string (body.as_string)
@@ -218,141 +231,22 @@ feature -- Amazon higher level functions
 		end
 
 
-feature -- Accesss
 
-	access_key_id: STRING
-			-- Access Key ID (a 20-character, alphanumeric sequence)
+feature -- Request signing
 
-	max_retries: INTEGER = 5
-			-- How often should requests be retried
-
-	s3_host_name: STRING
-
-	region: STRING
-			-- Optional region
-
-	bucket: STRING
-			-- Bucket
-
-
-feature {NONE} -- Implementation
-
-	append_other_fields (a_verb, a_path: STRING; a_request_data: detachable EPX_MIME_PART; request: STRING)
-		local
-			now: STDC_TIME
-			date: STRING
-			content_type: STRING
-			uri: UT_URI
-			signature: STRING
-			i: INTEGER
-			parameters: ARRAY [STRING]
-			name_value: STRING
-			name: STRING
-			p: INTEGER
-			first_time: BOOLEAN
-			exclude_acl: BOOLEAN
+	append_other_fields (a_verb, a_request_uri: STRING; a_request_data: detachable EPX_MIME_PART; a_request: STRING)
 		do
-			create uri.make (a_path)
-			if uri.has_query and then uri.query.has_substring ("uploadId=") then
-				exclude_acl := true
-			end
-
-			-- Append Amazon's special signature field
-			if a_request_data /= Void and then a_request_data.header.content_type /= Void then
-				content_type := a_request_data.header.content_type.value
-			end
-			create now.make_from_now
-			now.to_utc
-			date := now.rfc_date_string
-			create signature.make (256)
-			signature.append_string (a_verb)
-			signature.append_character ('%N')
-			-- No MD5
-			signature.append_character ('%N')
-			signature.append_string (content_type)
-			signature.append_character ('%N')
-			signature.append_string (date)
-			if not exclude_acl then
-				signature.append_string (once "%Nx-amz-acl:")
-				signature.append_string (acl)
-			end
-			signature.append_character ('%N')
-			-- Append path
-			signature.append_string ("/" + bucket + uri.path)
-			-- Append sub-resource(s)
-			if uri.has_query then
-				parameters := sh.split_on (uri.query, '&')
-				first_time := true
-				from
-					i := parameters.lower
-				until
-					i > parameters.upper
-				loop
-					name_value := parameters [i]
-					p := name_value.index_of ('=', 1)
-					if p = 0 then
-						name := name_value
-					else
-						name := name_value.substring (1, p - 1)
-					end
-					if sub_resources.has (name) then
-						if first_time then
-							signature.append_character ('?')
-							first_time := false
-						else
-							signature.append_character ('&')
-						end
-						signature.append_string (name_value)
-					end
-					i := i + 1
-				end
-			end
-			if hasher.is_checksum_available then
-				hasher.wipe_out
-			end
-			hasher.put_string (signature)
-			hasher.finalize
-			request.append (once "Date: ")
-			request.append (date)
-			request.append_string (once_new_line)
-			-- ACL header, not applicable for all requests
-			if not exclude_acl then
-				request.append (once "x-amz-acl: ")
-				request.append (acl)
-				request.append_string (once_new_line)
-			end
-			request.append (field_name_authorization)
-			request.append_string (once_colon_space)
-			request.append_string (once "AWS ")
-			request.append_string (access_key_id)
-			request.append_character (':')
-			request.append_string (as_base64 (hasher.binary_checksum))
-			request.append_string (once_new_line)
-		end
-
-	as_base64 (buf: STDC_BUFFER): STRING
-			-- Entire buffer in base64 encoding
-		require
-			buf_not_void: buf /= Void
-		local
-			output: KL_STRING_OUTPUT_STREAM
-			base64: UT_BASE64_ENCODING_OUTPUT_STREAM
-		do
-			create Result.make (hasher.hash_output_length * 2)
-			create output.make (Result)
-			create base64.make (output, False, False)
-			base64.put_string (buf.substring (0, buf.capacity-1))
-			base64.close
-		ensure
-			not_empty: Result /= Void and then not Result.is_empty
+			append_field (a_request, x_amz_content_sha256, "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855")
+			precursor (a_verb, a_request_uri, a_request_data, a_request)
 		end
 
 
+feature -- Field names
+
+	x_amz_content_sha256: STRING = "X-Amz-Content-SHA256"
+
+
 feature {NONE} -- Implementation
-
-	acl: STRING = "private"
-
-	hasher: EPX_HMAC_CALCULATION
 
 	sub_resources: DS_HASH_SET [STRING]
 			-- Known sub resources as per http://docs.amazonwebservices.com/AmazonS3/latest/dev/RESTAuthentication.html
@@ -377,10 +271,5 @@ feature {NONE} -- Implementation
 			not_void: Result /= Void
 		end
 
-invariant
-
-	access_key_has_correct_length: access_key_id /= Void and then access_key_id.count = 20
-	hasher_not_void: hasher /= Void
-	s3_host_name_not_empty: s3_host_name /= Void and then not s3_host_name.is_empty
 
 end
