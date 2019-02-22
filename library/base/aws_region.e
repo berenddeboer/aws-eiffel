@@ -46,28 +46,30 @@ feature {NONE} -- Parse ~/.aws/config
 			aws_config: EPX_PATH
 			file_system: EPX_FILE_SYSTEM
 			file: STDC_TEXT_FILE
-			sh: EPX_STRING_HELPER
+			l_sh: EPX_STRING_HELPER
 			ar: ARRAY [STRING]
 			key: STRING
+			l_found: BOOLEAN
 		once
 			Result := [""]
 			create aws_config.make_expand ("~/.aws/config")
 			create file_system
 			if file_system.is_readable (aws_config) then
-				create sh
+				create l_sh
 				create file.open_read (aws_config)
 				from
 					file.read_line
 				until
-					file.end_of_input
+					l_found or else file.end_of_input
 				loop
-					ar := sh.split_on (file.last_string, '=')
+					ar := l_sh.split_on (file.last_string, '=')
 					if ar.count = 2 then
 						key := ar.item (ar.lower)
-						sh.trim (key)
+						l_sh.trim (key)
 						if key ~ "region" then
 							Result.region := ar.item (ar.upper)
-							sh.trim (Result.region)
+							l_sh.trim (Result.region)
+							l_found := True
 						end
 					end
 					file.read_line

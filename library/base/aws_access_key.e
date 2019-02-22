@@ -60,36 +60,40 @@ feature -- Access
 feature {NONE} -- Parse ~/.aws/credentials
 
 	parse_aws_credentials: TUPLE [access_key_id: STRING; secret_access_key: STRING]
-			-- All settings in the default profile as key value pair
+			-- All settings in the first profile as key value pair
 		local
 			aws_credentials: EPX_PATH
 			file_system: EPX_FILE_SYSTEM
 			file: STDC_TEXT_FILE
-			sh: EPX_STRING_HELPER
+			l_sh: EPX_STRING_HELPER
 			ar: ARRAY [STRING]
 			key: STRING
+			l_found: INTEGER
 		once
 			Result := ["", ""]
 			create aws_credentials.make_expand ("~/.aws/credentials")
 			create file_system
 			if file_system.is_readable (aws_credentials) then
-				create sh
+				create l_sh
 				create file.open_read (aws_credentials)
 				from
 					file.read_line
 				until
+					l_found = 2 or else
 					file.end_of_input
 				loop
-					ar := sh.split_on (file.last_string, '=')
+					ar := l_sh.split_on (file.last_string, '=')
 					if ar.count = 2 then
 						key := ar.item (ar.lower)
-						sh.trim (key)
+						l_sh.trim (key)
 						if key ~ "aws_access_key_id" then
 							Result.access_key_id := ar.item (ar.upper)
-							sh.trim (Result.access_key_id)
+							l_sh.trim (Result.access_key_id)
+							l_found := l_found + 1
 						elseif key ~ "aws_secret_access_key" then
 							Result.secret_access_key := ar.item (ar.upper)
-							sh.trim (Result.secret_access_key)
+							l_sh.trim (Result.secret_access_key)
+							l_found := l_found + 1
 						end
 					end
 					file.read_line
