@@ -32,34 +32,40 @@ feature {NONE} -- Initialize
 			-- Initialize. and run.
 		do
 			parse_arguments
-			list_files
+			if attached bucket.parameter as l_bucket then
+				list_files (region, l_bucket)
+			end
 		end
 
 
 feature -- Commands
 
-	list_files
+	list_files (a_region, a_bucket: READABLE_STRING_8)
 		local
 			s3: S3_CLIENT
 			query: STRING
 		do
-			create s3.make (region, bucket.parameter.out)
+			create s3.make (a_region, a_bucket)
 			query := "?"
 			if max_keys.occurrences > 0 then
 				query.append_string ("max-keys=" + max_keys.parameter.out)
 			end
-			if prefix_option.occurrences > 0 then
-				if query.count > 1 then
-					query.append_character ('&')
+			if attached prefix_option.parameter as l_prefix_option then
+				if prefix_option.occurrences > 0 then
+					if query.count > 1 then
+						query.append_character ('&')
+					end
+					query.append_string ("prefix=" + l_prefix_option)
 				end
-				query.append_string ("prefix=" + prefix_option.parameter.out)
 			end
 			if query.count > 1 then
 				query.append_character ('&')
 			end
 			query.append_string ("delimiter=")
 			if delimiter.occurrences > 0 then
-				query.append_string (delimiter.parameter.out)
+				if attached delimiter.parameter as l_delimiter then
+					query.append_string (l_delimiter)
+				end
 			end
 			s3.get ("/" + query)
 			if s3.is_open then
@@ -67,7 +73,9 @@ feature -- Commands
 				if not s3.is_response_ok then
 					stdout.put_line ("Response code: " + s3.response_code.out)
 				end
-				stdout.put (s3.body.as_string)
+				if attached s3.body as l_body then
+					stdout.put (l_body.as_string)
+				end
 			else
 				stderr.put_line ("Failed to connect to S3.")
 			end

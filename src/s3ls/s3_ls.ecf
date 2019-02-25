@@ -16,7 +16,7 @@
 		<capability>
 			<catcall_detection use="none"/>
 			<concurrency support="none" use="thread"/>
-			<void_safety support="conformance" use="conformance"/>
+			<void_safety support="all" use="all"/>
 		</capability>
 		<library name="aws-eiffel" location="$AWS_EIFFEL\library\library-gobo.ecf" readonly="false">
 			<option debug="false">
