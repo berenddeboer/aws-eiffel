@@ -16,6 +16,8 @@ class
 
 inherit
 
+	ANY
+
 	EPX_CURRENT_PROCESS
 		export
 			{NONE} all
@@ -34,20 +36,19 @@ create
 
 feature {NONE} -- Initialization
 
-	make (an_access_key_id, a_secret_access_key, a_region, a_bucket, a_key: STRING; a_verbose: INTEGER)
+	make (a_region, a_bucket, a_key: READABLE_STRING_8; a_verbose: INTEGER)
 		require
-			access_key_has_correct_length: an_access_key_id /= Void and then an_access_key_id.count = 20
-			secret_key_has_correct_length: a_secret_access_key /= Void and then a_secret_access_key.count = 40
 			bucket_not_empty: a_bucket /= Void and then not a_bucket.is_empty
 			key_not_empty: a_key /= Void and then not a_key.is_empty
 		do
 			set_part_size (67108864)
-			create s3.make (an_access_key_id, a_secret_access_key, a_region, a_bucket)
+			create s3.make (a_region, a_bucket)
 			set_verbose (a_verbose)
 			key := a_key
 			-- No error handling right now, will built retry when needed
 			s3.set_continue_on_error
 			display_waiting := true
+			upload_id := ""
 		end
 
 
@@ -56,6 +57,12 @@ feature -- Status
 	something_read,
 	something_written: BOOLEAN
 
+	uploading: BOOLEAN
+			-- Has a multipart upload process started?
+		do
+			Result := not upload_id.is_empty
+		end
+
 
 feature -- Access
 
@@ -63,7 +70,8 @@ feature -- Access
 
 	key: STRING
 
-	upload_id: detachable STRING
+	upload_id: STRING
+			-- The identifier returned by S3 to be used for multi-part upload
 
 	part_size: INTEGER
 			-- Size of parts to upload; default is 64MB
@@ -82,23 +90,27 @@ feature -- Counters
 	number_of_output_buffer_overflows,
 	number_of_s3_retries: INTEGER
 
+
 feature -- Change
 
 	set_part_size (a_part_size: INTEGER)
 		require
 			minimum_part_size_is_5mb: a_part_size >= 5242880
 		local
-			buffer: EPX_PARTIAL_BUFFER
+			buffer: S3_BUFFER
 		do
-			deallocate_buffers
 			part_size := a_part_size
 			create buffer.allocate (part_size)
 			create ring_buffer.make (buffer)
 			current_input_buffer := ring_buffer
 			current_output_buffer := ring_buffer
-			ring_buffer.put_right (create {DS_LINKABLE [EPX_PARTIAL_BUFFER]}.make (create {EPX_PARTIAL_BUFFER}.allocate (part_size)))
-			ring_buffer.right.put_right (create {DS_LINKABLE [EPX_PARTIAL_BUFFER]}.make (create {EPX_PARTIAL_BUFFER}.allocate (part_size)))
-			ring_buffer.right.right.put_right (ring_buffer)
+			ring_buffer.put_right (create {like ring_buffer}.make (create {S3_BUFFER}.allocate (part_size)))
+			if attached ring_buffer.right as right_buffer then
+				right_buffer.put_right (create {like ring_buffer}.make (create {S3_BUFFER}.allocate (part_size)))
+				if attached right_buffer.right as right_right_buffer then
+					right_right_buffer.put_right (ring_buffer)
+				end
+			end
 		ensure
 			definition: part_size = a_part_size
 		end
@@ -119,12 +131,17 @@ feature -- Writing
 				fd_stderr.put_line ("All input processed, finishing uploads.")
 			end
 			from
-				if current_output_buffer = current_input_buffer then
-					current_input_buffer := current_input_buffer.right
-					flush_output_buffer
-				else
-					flush_output_buffer
-					current_input_buffer := current_input_buffer.right
+					check
+						circular_buffer: attached current_input_buffer.right
+					end
+				if attached current_input_buffer.right as right_buffer then
+					if current_output_buffer = current_input_buffer then
+						current_input_buffer := right_buffer
+						flush_output_buffer
+					else
+						flush_output_buffer
+						current_input_buffer := right_buffer
+					end
 				end
 			until
 				current_output_buffer = current_input_buffer
@@ -137,16 +154,18 @@ feature -- Writing
 			current_output_buffer := ring_buffer
 			output_bytes_position := 0
 
-			if upload_id /= Void then
+			if uploading then
 				s3.complete_multipart_upload (upload_id, key)
 				if not s3.is_response_ok then
 					fd_stderr.put_line ("Failed to complete multi-part upload.")
 					if verbose > 0 then
-						fd_stderr.put (s3.body.as_string)
+						if attached s3.body as body then
+							fd_stderr.put (body.as_string)
+						end
 					end
 					exit_with_failure
 				end
-				upload_id := Void
+				upload_id.make_empty
 			end
 		end
 
@@ -157,8 +176,8 @@ feature -- Writing
 			stream_not_void: a_stream /= Void
 			open: a_stream.is_open_read
 		local
-			bytes_to_read: INTEGER
-			input_buffer: EPX_PARTIAL_BUFFER
+			l_bytes_to_read: INTEGER
+			l_input_buffer: S3_BUFFER
 		do
 			something_written := false
 			-- First try if network likes some more
@@ -166,9 +185,9 @@ feature -- Writing
 
 			-- Read as much from `a_stream' as possible
 			number_of_nonblocking_reads := number_of_nonblocking_reads + 1
-			input_buffer := current_input_buffer.item
-			bytes_to_read := input_buffer.capacity - input_buffer.count
-			a_stream.read_buffer (input_buffer, input_buffer.count, bytes_to_read)
+			l_input_buffer := current_input_buffer.item
+			l_bytes_to_read := l_input_buffer.capacity - l_input_buffer.count
+			a_stream.read_buffer (l_input_buffer, l_input_buffer.count, l_bytes_to_read)
 			something_read := a_stream.last_read > 0
 			if not something_read and then not something_written and then not a_stream.end_of_input then
 				-- Nothing to read, and nothing written, just block till
@@ -178,18 +197,18 @@ feature -- Writing
 				if verbose > 2 then
 					fd_stderr.put_line ("Nothing to read or write, read input in blocking mode")
 				end
-				fd_stdin.set_blocking_io (True)
+				a_stream.set_blocking_io (True)
 				number_of_blocking_reads := number_of_blocking_reads + 1
-				a_stream.read_buffer (input_buffer, input_buffer.count, bytes_to_read)
+				a_stream.read_buffer (l_input_buffer, l_input_buffer.count, l_bytes_to_read)
 				something_read := a_stream.last_read > 0
 				if verbose > 2 then
 					fd_stderr.put_line ("Read " + a_stream.last_read.out + " bytes in blocking mode")
 				end
-				fd_stdin.set_blocking_io (False)
+				a_stream.set_blocking_io (False)
 			end
-			input_buffer.set_count (input_buffer.count + a_stream.last_read)
+			l_input_buffer.set_count (l_input_buffer.count + a_stream.last_read)
 			total_bytes_read := total_bytes_read + a_stream.last_read
-			if input_buffer.count = input_buffer.capacity then
+			if l_input_buffer.count = l_input_buffer.capacity then
 				if current_input_buffer.right = current_output_buffer then
 					-- No more intermediate storage, must empty a buffer to S3 first
 					number_of_output_buffer_overflows := number_of_output_buffer_overflows + 1
@@ -201,9 +220,13 @@ feature -- Writing
 				if verbose > 1 then
 					fd_stderr.put_line (once "Moving to next input buffer")
 				end
-				current_input_buffer := current_input_buffer.right
-				input_buffer := current_input_buffer.item
-				input_buffer.set_count (0)
+					check
+						circular_buffer: attached current_input_buffer.right
+					end
+				if attached current_input_buffer.right as right_buffer then
+					current_input_buffer := right_buffer
+				end
+				current_input_buffer.item.set_count (0)
 			end
 
 			write_output_buffer
@@ -212,7 +235,7 @@ feature -- Writing
 
 feature {NONE} -- Implementation
 
-	ring_buffer: DS_LINKABLE [EPX_PARTIAL_BUFFER]
+	ring_buffer: DS_LINKABLE [S3_BUFFER]
 
 	current_input_buffer: like ring_buffer
 
@@ -229,9 +252,11 @@ feature {NONE} -- Implementation
 			not_open: not s3.is_open
 		do
 			assert_multipart_upload_started
-			s3.begin_part_upload (upload_id, key, current_output_buffer.item.count)
+			s3.begin_part_upload (upload_id, key, current_output_buffer.item.count, current_output_buffer.item.sha256.digest_as_string)
 			if verbose > 1 then
-				fd_stderr.put_line ("Part " + (s3.parts.count + 1).out + " upload started.")
+				if attached s3.parts as parts then
+					fd_stderr.put_line ("Part " + (parts.count + 1).out + " upload started.")
+				end
 			end
 		ensure
 			s3_open: s3.is_open
@@ -240,25 +265,33 @@ feature {NONE} -- Implementation
 	assert_multipart_upload_started
 			-- Make sure we have an upload_id.
 		do
-			if upload_id = Void then
+			if not uploading then
 				if verbose > 1 then
 					fd_stderr.put_line ("Initiating multipart upload.")
 				end
 				upload_id := s3.multipart_upload_id (key)
+				if not s3.is_response_ok and then s3.response_code >= 500 then
+					-- Retry once
+					sleep (1)
+					upload_id := s3.multipart_upload_id (key)
+				end
 				if not s3.is_response_ok then
 					fd_stderr.put_line ("Failed to initiate multi-part upload.")
 					if verbose > 0 then
-						fd_stderr.put (s3.body.as_string)
+						if attached s3.body as body then
+							fd_stderr.put (body.as_string)
+						end
 					end
 					exit_with_failure
 				end
-				-- What if fails?
+
 				if verbose > 1 then
 					fd_stderr.put_line ("Multipart upload initiated.")
 				end
 			end
 		ensure
-			upload_id_set: upload_id /= Void and then not upload_id.is_empty
+			upload_id_set: not upload_id.is_empty
+			upload_started: uploading
 		end
 
 	write_output_buffer
@@ -269,7 +302,7 @@ feature {NONE} -- Implementation
 			-- Note that in case of restart, `total_bytes_written' might
 			-- actually have become smaller.
 		local
-			output_buffer: EPX_PARTIAL_BUFFER
+			output_buffer: S3_BUFFER
 			bytes_to_write: INTEGER
 		do
 			-- We can only write if we have a completed input buffer,
@@ -309,39 +342,46 @@ feature {NONE} -- Implementation
 			something_to_write: current_output_buffer.item.count > output_bytes_position
 			not_reading_and_writing_to_same_buffer: current_output_buffer /= current_input_buffer
 		local
-			output_buffer: EPX_PARTIAL_BUFFER
-			bytes_to_write: INTEGER
-			http: EPX_TEXT_IO_STREAM
+			l_output_buffer: S3_BUFFER
+			l_bytes_to_write: INTEGER
+			l_message: STRING
 		do
-			output_buffer := current_output_buffer.item
-			bytes_to_write := output_buffer.count - output_bytes_position
-			http := s3.http
-			http.put_buffer (output_buffer, output_bytes_position, bytes_to_write)
-			if http.errno.is_ok then
-				output_bytes_position := output_bytes_position + http.last_written
-				total_bytes_written := total_bytes_written + http.last_written
-				something_written := true
-			else
-				-- S3 failure, restart part
-				number_of_s3_retries := number_of_s3_retries + 1
-				if verbose > 0 then
-					fd_stderr.put_line ("Part " + (s3.parts.count + 1).out + " upload failed, retrying.")
+			l_output_buffer := current_output_buffer.item
+			l_bytes_to_write := l_output_buffer.count - output_bytes_position
+			if attached {EPX_TEXT_IO_STREAM} s3.http as l_http then
+				l_http.put_buffer (l_output_buffer, output_bytes_position, l_bytes_to_write)
+				if l_http.errno.is_ok then
+					output_bytes_position := output_bytes_position + l_http.last_written
+					total_bytes_written := total_bytes_written + l_http.last_written
+					something_written := true
+				else
+					-- S3 failure, restart part
+					l_message := l_http.errno.message
+					number_of_s3_retries := number_of_s3_retries + 1
+					if verbose > 0 then
+						if attached s3.parts as parts then
+							fd_stderr.put_line ("Part " + (parts.count + 1).out + " upload failed, retrying.")
+							fd_stderr.put_line (l_message)
+						end
+					end
+					s3.close
+					total_bytes_written := total_bytes_written - output_bytes_position
+					output_bytes_position := 0
+					open_s3
+					if number_of_s3_retries <= s3.max_retries then
+						do_write_output_buffer
+					end
 				end
-				s3.close
-				total_bytes_written := total_bytes_written - output_bytes_position
-				output_bytes_position := 0
-				open_s3
-				do_write_output_buffer
 			end
 		end
 
 	flush_output_buffer
-			-- Write entire contents of output buffer to S3, finish part,
+			-- Write entire contents of the current output buffer to S3, finish part,
 			-- and move output buffer pointer to next buffer.
 		require
 			not_reading_and_writing_to_same_buffer: current_output_buffer /= current_input_buffer
 		local
-			output_buffer: EPX_PARTIAL_BUFFER
+			output_buffer: S3_BUFFER
 		do
 			if verbose > 1 then
 				fd_stderr.put_line (once "Flushing output buffer to S3")
@@ -352,6 +392,7 @@ feature {NONE} -- Implementation
 			from
 				output_buffer := current_output_buffer.item
 			until
+				number_of_s3_retries > s3.max_retries or else
 				output_bytes_position = output_buffer.count
 			loop
 				do_write_output_buffer
@@ -373,10 +414,14 @@ feature {NONE} -- Implementation
 			s3.end_part_upload
 			if s3.is_response_ok then
 				if verbose > 1 then
-					fd_stderr.put_line ("Part " + s3.parts.count.out + " uploaded.")
+					if attached s3.parts as parts then
+						fd_stderr.put_line ("Part " + parts.count.out + " uploaded.")
+					end
 				end
 			else
-				fd_stderr.put_line (s3.body.as_string)
+				if attached s3.body as body then
+					fd_stderr.put_line (body.as_string)
+				end
 				exit_with_failure
 			end
 		ensure
@@ -389,34 +434,22 @@ feature {NONE} -- Implementation
 			if verbose > 1 then
 				fd_stderr.put_line (once "Moving to next output buffer")
 			end
-			current_output_buffer := current_output_buffer.right
+				check
+					right_buffer_exists: attached current_output_buffer.right
+				end
+			if attached current_output_buffer.right as right_buffer then
+				current_output_buffer := right_buffer
+			end
 			output_bytes_position := 0
 		ensure
 			output_bytes_position_reset: output_bytes_position = 0
 			output_buffer_moved_forward: current_output_buffer = old current_output_buffer.right
 		end
 
-	deallocate_buffers
-		local
-			p: like ring_buffer
-		do
-			if ring_buffer /= Void then
-				from
-					p := ring_buffer.right
-					ring_buffer.item.deallocate
-				until
-					p = ring_buffer
-				loop
-					p.item.deallocate
-					p := p.right
-				end
-			end
-		end
 
 invariant
 
 	s3_not_void: s3 /= Void
-	upload_id_void_or_not_empty: upload_id = Void or else not upload_id.is_empty
 	total_bytes_read_not_negative: total_bytes_read >= 0
 	total_bytes_written_not_negative: total_bytes_written >= 0
 	cannot_write_more_than_read: total_bytes_written <= total_bytes_read

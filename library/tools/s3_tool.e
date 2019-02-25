@@ -51,6 +51,11 @@ feature {NONE} -- Initialize
 				fd_stderr.put_string (once "Exception code: ")
 				fd_stderr.put_line (exceptions.exception.out)
 			end
+			if exceptions.exception /= exceptions.developer_exception then
+				if attached exceptions.exception_trace as exception_trace then
+					fd_stderr.put_string (exception_trace)
+				end
+			end
 			exit_with_failure
 		end
 
@@ -107,13 +112,15 @@ feature -- Command-line parsing
 			valid_options: a_parser.valid_options
 		do
 			a_parser.parse_arguments
-			if region_option.occurrences > 0 then
-				region := region_option.parameter.out
+			if region_option.occurrences > 0 and then attached region_option.parameter as l_region then
+				region := l_region
 			elseif not default_region.is_empty then
 				region := default_region
 			else
 				fd_stderr.put_line ("Region not set. Please define it in ~/.aws/config or pass the --region parameter.")
 				a_parser.help_option.display_usage (a_parser)
+				-- silence compiler
+				region := ""
 			end
 			if access_key_id.is_empty then
 				fd_stderr.put_line ("Access key not set. Please define it in ~/.aws/config.")
@@ -123,6 +130,10 @@ feature -- Command-line parsing
 				fd_stderr.put_line ("Secret key not set. Please define it in ~/.aws/credentials.")
 				a_parser.help_option.display_usage (a_parser)
 			end
+		ensure
+			region_set: not region.is_empty
+			access_key_set: not access_key_id.is_empty
+			secret_access_key_set: not secret_access_key.is_empty
 		end
 
 

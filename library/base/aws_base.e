@@ -86,6 +86,11 @@ feature -- Request signing
 				if part.header.fields.found then
 					headers.put (part.header.fields.found_item.value, field_name_content_type)
 				end
+				part.header.fields.search (x_amz_content_sha256)
+				if part.header.fields.found then
+					headers.put (part.header.fields.found_item.value, part.header.fields.found_item.name)
+				end
+				-- TODO: I think every X-Amz- header needs to be added
 				-- Purely to pass test in TEST_AWS_SIGNATURE_V4
 				if part.header.fields.has ("My-Header1") then
 					headers.force (part.header.fields.item ("My-Header1").value, "My-Header1")
@@ -146,5 +151,7 @@ feature -- Field names
 	x_amz_target: STRING = "X-Amz-Target"
 
 	x_amz_security_token: STRING = "X-Amz-Security-Token"
+
+	x_amz_content_sha256: STRING = "X-Amz-Content-SHA256"
 
 end

@@ -1,0 +1,48 @@
+<?xml version="1.0" encoding="ISO-8859-1"?>
+<system xmlns="http://www.eiffel.com/developers/xml/configuration-1-18-0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.eiffel.com/developers/xml/configuration-1-18-0 http://www.eiffel.com/developers/xml/configuration-1-18-0.xsd" name="s3store" uuid="4D5E97BE-9252-454F-95DB-44E9885FFD5A">
+	<target name="s3store">
+		<root class="S3_STORE" feature="make"/>
+		<file_rule>
+			<exclude>/CVS$</exclude>
+			<exclude>/EIFGENs$</exclude>
+			<exclude>/\.git$</exclude>
+			<exclude>/\.svn$</exclude>
+		</file_rule>
+		<option debug="false" warning="true" syntax="standard" manifest_array_type="mismatch_warning">
+			<assertions precondition="true" postcondition="true" check="true" invariant="true" loop="true" supplier_precondition="true"/>
+		</option>
+		<setting name="console_application" value="true"/>
+		<setting name="exception_trace" value="true"/>
+		<capability>
+			<catcall_detection use="none"/>
+			<concurrency support="none" use="thread"/>
+			<void_safety support="all" use="all"/>
+		</capability>
+		<library name="aws-eiffel" location="$AWS_EIFFEL\library\library-gobo.ecf" readonly="false">
+			<option debug="false">
+				<debug name="aws" enabled="true"/>
+				<assertions precondition="true" postcondition="true" check="true" invariant="true" loop="true" supplier_precondition="true"/>
+			</option>
+		</library>
+		<library name="base" location="iron:base:base.ecf"/>
+		<library name="eposix" location="${EPOSIX}\eposix-gobo.ecf" readonly="false">
+			<option debug="true">
+				<debug name="http_client" enabled="true"/>
+				<assertions precondition="true" postcondition="true" check="true" invariant="true" loop="true" supplier_precondition="true"/>
+			</option>
+		</library>
+		<library name="gobo_argument" location="$GOBO\library\argument\library.ecf">
+			<option>
+				<assertions precondition="true"/>
+			</option>
+		</library>
+		<library name="gobo_kernel" location="$ISE_LIBRARY\library\gobo\gobo_kernel.ecf"/>
+		<library name="gobo_structure" location="$GOBO\library\structure\library.ecf">
+			<option>
+				<assertions precondition="true"/>
+			</option>
+		</library>
+    <library name="crypto" location="iron:crypto:crypto.ecf" />
+		<cluster name="s3_store" location=".\" recursive="true"/>
+	</target>
+</system>

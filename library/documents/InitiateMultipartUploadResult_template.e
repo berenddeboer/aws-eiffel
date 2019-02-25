@@ -1,6 +1,6 @@
 note
 
-description: "Generated class"
+	description: "Generated class"
 
 class
 
@@ -9,10 +9,21 @@ class
 inherit
 
 	GEDXML_TEMPLATE
+		redefine
+			make
+		end
 
 create
 
 	make
+
+feature {NONE} -- Initialisation
+
+	make
+		do
+			create InitiateMultipartUploadResult
+			precursor
+		end
 
 feature -- Elements
 

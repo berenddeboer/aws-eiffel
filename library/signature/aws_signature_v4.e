@@ -89,7 +89,7 @@ feature {NONE} -- Implementation
 			l_uri: UT_URI
 			l_query_items: like as_sorted
 			v: STRING
-			sha256: SHA256
+			l_sha256: SHA256
 		do
 			Result := ""
 
@@ -152,12 +152,15 @@ feature {NONE} -- Implementation
 			Result.append_character ('%N')
 
 			-- 6. Hashed payload
-			if a_payload.is_empty then
+			a_headers.search (x_amz_content_sha256_lc)
+			if a_headers.found then
+				Result.append_string (a_headers.found_item)
+			elseif a_payload.is_empty then
 				Result.append_string (empty_hashed_payload)
 			else
-				create sha256.make
-				sha256.update_from_string (a_payload)
-				Result.append_string (sha256.digest_as_string.as_lower)
+				create l_sha256.make
+				l_sha256.update_from_string (a_payload)
+				Result.append_string (l_sha256.digest_as_string.as_lower)
 			end
 		end
 
@@ -229,7 +232,7 @@ feature {NONE} -- Implementation
 			create comparator.make
 			create sorter.make (comparator)
 			lc_keys.sort (sorter)
-			create Result.make (a_headers.count)
+			create Result.make_equal (a_headers.count)
 			across
 				lc_keys as c
 			loop
@@ -320,6 +323,8 @@ feature {NONE} -- Implementation
 feature -- Field names
 
 	x_amz_date: STRING = "X-Amz-Date"
+
+	x_amz_content_sha256_lc: STRING = "x-amz-content-sha256"
 
 
 end

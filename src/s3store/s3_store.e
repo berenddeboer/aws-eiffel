@@ -2,7 +2,7 @@ note
 
 	description:
 
-		"Stream stdout to S3 bucket"
+		"Stream stdin to an S3 bucket"
 
 	library: "s3 tools"
 	author: "Berend de Boer <berend@pobox.com>"
@@ -31,15 +31,20 @@ feature {NONE} -- Initialize
 	make_no_rescue
 			-- Initialize. and run.
 		local
-			signal: STDC_SIGNAL
+			l_signal: STDC_SIGNAL
+			l_input: EPX_FILE_DESCRIPTOR
 		do
 			parse_arguments
-			create signal.make (SIGPIPE)
-			signal.set_ignore_action
-			signal.apply
-			copy_input_to_s3
-			if verbose.occurrences > 0 then
-				--fd_stderr.put_line (formatted_upload_speed (bytes_sent, start))
+			create l_signal.make (SIGPIPE)
+			l_signal.set_ignore_action
+			l_signal.apply
+			if attached bucket.parameter as l_bucket and then attached key.parameter as l_key then
+				if file_option.occurrences > 0 and then attached file_option.parameter as l_file_name then
+					create l_input.open_read (l_file_name)
+				else
+					l_input := fd_stdin
+				end
+				copy_input_to_s3 (region, l_bucket, l_key, l_input)
 			end
 		end
 
@@ -57,6 +62,8 @@ feature {NONE} -- Argument parsing
 
 	nonblocking_io: AP_FLAG
 
+	file_option: AP_STRING_OPTION
+
 	parse_arguments
 		local
 			parser: AP_PARSER
@@ -72,39 +79,38 @@ feature {NONE} -- Argument parsing
 			create nonblocking_io.make ('n', "non-blocking-io")
 			nonblocking_io.set_description ("If your S3 write speed is slower than your input speed, non-blocking i/o might give you better performance.")
 			parser.options.force_last (nonblocking_io)
+			create file_option.make ('f', "file")
+			file_option.set_description ("Read from file instead of stdin.")
+			parser.options.force_last (file_option)
 			do_parse_arguments (parser)
 		end
 
 
 feature -- Writing
 
-	copy_input_to_s3
+	copy_input_to_s3 (a_region, a_bucket, a_key: READABLE_STRING_8; an_input: EPX_FILE_DESCRIPTOR)
 			-- Read from stdin, dump to bucket.
 		local
 			writer: S3_WRITER
-			r: STRING
 			start: EPX_TIME
 			last_speed_update: INTEGER
 			now: INTEGER
 		do
-			if region.was_found then
-				r := region.parameter
-			end
-			create writer.make (access_key_id, secret_access_key, r, bucket.parameter, key.parameter, verbose.occurrences)
+			create writer.make (a_region, a_bucket, a_key, verbose.occurrences)
 			writer.set_verbose (verbose.occurrences)
 			if part_size.was_found then
 				writer.set_part_size (part_size.parameter * 1024 * 1024)
 			end
 			if nonblocking_io.occurrences > 0 then
-				fd_stdin.set_blocking_io (False)
+				an_input.set_blocking_io (False)
 			end
 			create start.make_from_now
 			last_speed_update := current_time
 			from
 			until
-				fd_stdin.end_of_input
+				an_input.end_of_input
 			loop
-				writer.write (fd_stdin)
+				writer.write (an_input)
 				if verbose.occurrences > 0 then
 					now := current_time
 					if now - last_speed_update > 3 then
