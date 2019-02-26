@@ -19,14 +19,8 @@ class
 
 inherit
 
-	S3_ACCESS_KEY
+	S3_TOOL
 
-	EPX_CURRENT_PROCESS
-
-	ST_FORMATTING_ROUTINES
-		export
-			{NONE} all
-		end
 
 create
 
@@ -36,20 +30,27 @@ create
 
 feature {NONE} -- Initialize
 
-	make
+	make_no_rescue
+		local
+			l_output: EPX_FILE_DESCRIPTOR
 		do
-			make_no_rescue
-		rescue
-			if exceptions.is_developer_exception then
-				fd_stderr.put_line (exceptions.developer_exception_name)
-			else
-				fd_stderr.put_string (once "Exception code: ")
-				fd_stderr.put_line (exceptions.exception.out)
+			parse_arguments
+			if attached bucket.parameter as l_bucket and then attached key.parameter as l_key then
+				if file_option.occurrences > 0 and then attached file_option.parameter as l_file_name then
+					create l_output.create_write (l_file_name)
+				else
+					l_output := fd_stdout
+				end
+				copy_s3_to_stdout (region, l_bucket, l_key, l_output)
 			end
-			exit_with_failure
 		end
 
-	make_no_rescue
+
+feature -- Reading
+
+	copy_s3_to_stdout (a_region, a_bucket, a_key: READABLE_STRING_8; an_output: EPX_FILE_DESCRIPTOR)
+		require
+			output_open: an_output.is_open
 		local
 			s3: S3_CLIENT
 			reading_parts: BOOLEAN
@@ -58,63 +59,90 @@ feature {NONE} -- Initialize
 			--total_bytes_received: INTEGER_64
 			bytes_received: INTEGER_64
 			buffer: STDC_BUFFER
+			s: STRING
 		do
-			parse_arguments
 			create buffer.allocate (buffer_size)
-			create s3.make (access_key_id, secret_access_key)
+			create s3.make (a_region, a_bucket)
 			-- Cannot reuse, because we expect an eof in the append code below
 			--s3.set_reuse_connection
 			s3.set_continue_on_error
 			create start.make_from_now
-			s3.retrieve_object_header_with_retry (bucket.parameter, key.parameter)
-			--s3.read_response
-			if s3.response_code = 404 then
-				if verbose.occurrences > 2 then
-					print_http_response_header (s3)
-				end
-				-- Exact name not found, might be a prefix, so check if
-				-- part 0 exists.
-				s3.retrieve_object_header_with_retry (bucket.parameter, key.parameter + format(once ":$020i", <<integer_cell (part)>>))
-				reading_parts := True
-			end
-			print_http_response_header (s3)
-			if s3.response_code = 200 then
-				if verbose.occurrences > 0 then
-					fd_stderr.put_string (once "Downloading " + s3.last_uri)
-					fd_stderr.put_line (" (" + s3.response.header.content_length.length.out + " bytes)")
-				end
-				fd_stdout.put_string (s3.response.text_body.as_string)
-				--fd_stdout.append (s3.http)
-				read_object (s3.http, buffer, s3.response.header.content_length.length)
-				bytes_received := bytes_received + s3.response.header.content_length.length
-				print_download_speed (bytes_received, start)
-				if reading_parts then
-					from
-						part := 1
-					until
-						s3.response_code = 404
-					loop
-						s3.retrieve_object_header_with_retry (bucket.parameter, key.parameter + format(once ":$020i", <<integer_cell (part)>>))
+			if attached bucket.parameter as l_bucket and then attached key.parameter as l_key then
+				s3.retrieve_object_header_with_retry (l_key)
+
+				if s3.response_code = 404 then
+					if verbose.occurrences > 2 then
 						print_http_response_header (s3)
-						if s3.response_code = 200 then
-							if verbose.occurrences > 0 then
-								fd_stderr.put_line (once "Downloading " + s3.last_uri)
+					end
+					if verbose.occurrences > 1 then
+						fd_stderr.put_line (once "Exact name not found, checking for part 0.")
+					end
+					-- Exact name not found, might be a prefix, so check if
+					-- part 0 exists.
+					s3.retrieve_object_header_with_retry (l_key + format(once ":$020i", <<integer_cell (part)>>))
+					reading_parts := True
+				end
+
+				print_http_response_header (s3)
+
+				if s3.response_code = 200 then
+					if attached s3.response as l_response and then attached l_response.header.content_length as l_content_length then
+						if verbose.occurrences > 0 then
+							if attached s3.last_uri as l_uri then
+								fd_stderr.put_string (once "Downloading " + l_uri)
+								if file_option.occurrences > 0 and then attached file_option.parameter as l_file_name then
+									fd_stderr.put_string (once " to " + l_file_name)
+								end
 							end
-							fd_stdout.put_string (s3.response.text_body.as_string)
-							read_object (s3.http, buffer, s3.response.header.content_length.length)
-							bytes_received := bytes_received + s3.response.header.content_length.length
-							print_download_speed (bytes_received, start)
-							part := part + 1
+							fd_stderr.put_line (" (" + l_content_length.length.out + " bytes)")
+						end
+						if attached l_response.text_body as l_text_body then
+							an_output.put_string (l_text_body.as_string)
+						end
+						if attached s3.http as l_http then
+							read_object (l_http, buffer, l_content_length.length, an_output)
+						end
+						bytes_received := bytes_received + l_content_length.length
+						print_download_speed (bytes_received, start)
+					end
+					if reading_parts then
+						from
+							part := 1
+						until
+							s3.response_code = 404
+						loop
+							s3.retrieve_object_header_with_retry (l_key + format(once ":$020i", <<integer_cell (part)>>))
+							print_http_response_header (s3)
+							if s3.response_code = 200 then
+								if attached s3.response as l_response and then attached l_response.header.content_length as l_content_length then
+									if verbose.occurrences > 0 then
+										if attached s3.last_uri as l_uri then
+											fd_stderr.put_line (once "Downloading " + l_uri)
+										end
+									end
+									if attached l_response.text_body as l_text_body then
+										an_output.put_string (l_text_body.as_string)
+									end
+									if attached s3.http as l_http then
+										read_object (l_http, buffer, l_content_length.length, an_output)
+									end
+									bytes_received := bytes_received + l_content_length.length
+								end
+								print_download_speed (bytes_received, start)
+								part := part + 1
+							end
 						end
 					end
+				elseif s3.response_code = 403 then
+					fd_stderr.put_line ("Invalid credentials for " + l_bucket + "/" + l_key)
+					exit_with_failure
+				elseif s3.response_code = 404 then
+					fd_stderr.put_line ("No object named " + l_bucket + "/" + l_key)
+					exit_with_failure
+				else
+					fd_stderr.put_line ("Server response: " + s3.response_code.out)
+					exit_with_failure
 				end
-			elseif s3.response_code = 403 then
-				fd_stderr.put_line ("Invalid credentials for " + bucket.parameter + "/" + key.parameter)
-				exit_with_failure
-			else
-				fd_stderr.put_line ("Server response: " + s3.response_code.out)
-				fd_stderr.put_line ("No object named " + bucket.parameter + "/" + key.parameter)
-				exit_with_failure
 			end
 		end
 
@@ -123,11 +151,9 @@ feature -- Access
 
 	buffer_size: INTEGER = 16384
 
-	bucket: AP_STRING_OPTION
-
 	key: AP_STRING_OPTION
 
-	verbose: AP_FLAG
+	file_option: AP_STRING_OPTION
 
 
 feature {NONE} -- Argument parsing
@@ -136,30 +162,15 @@ feature {NONE} -- Argument parsing
 		local
 			parser: AP_PARSER
 		do
-			create parser.make
-			parser.set_application_description (once "Output contents of a given S3 object to standard output.")
-			parser.set_parameters_description (once "")
-			create bucket.make ('b', "bucket")
-			bucket.set_description ("Bucket name.")
-			bucket.enable_mandatory
-			parser.options.force_last (bucket)
+			parser := new_default_parser (once "s3cat 1.1 (c) by Berend de Boer <berend@pobox.com>%NStream s3 object to stand otuput.")
 			create key.make ('k', "key")
 			key.set_description ("Key name.")
 			key.enable_mandatory
 			parser.options.force_last (key)
-			create verbose.make ('v', "verbose")
-			verbose.set_description ("Verbose output like progress.")
-			parser.options.force_last (verbose)
-
-			parser.parse_arguments
-			if access_key_id.is_empty then
-				fd_stderr.put_line ("Environment variable S3_ACCESS_KEY_ID not set. It should contain your Amazon access key.")
-				parser.help_option.display_usage (parser)
-			end
-			if secret_access_key.is_empty then
-				fd_stderr.put_line ("Environment variable S3_SECRET_ACCESS_KEY not set. It should contain your Amazon secret access key.")
-				parser.help_option.display_usage (parser)
-			end
+			create file_option.make ('f', "file")
+			file_option.set_description ("Write to file instead of stdout.")
+			parser.options.force_last (file_option)
+			do_parse_arguments (parser)
 		end
 
 
@@ -173,7 +184,9 @@ feature {NONE} -- Implementation
 				fd_stderr.put_string (s3.response_code.out)
 				fd_stderr.put_character (' ')
 				fd_stderr.put_line (s3.response_phrase)
-				fd_stderr.put_line (s3.response.header.as_string)
+				if attached s3.response as l_response then
+					fd_stderr.put_line (l_response.header.as_string)
+				end
 			end
 		end
 
@@ -201,12 +214,11 @@ feature {NONE} -- Implementation
 			end
 		end
 
-	read_object (in: EPX_TEXT_IO_STREAM; buffer: STDC_BUFFER; an_object_size: INTEGER_64)
+	read_object (in: EPX_TEXT_IO_STREAM; buffer: STDC_BUFFER; an_object_size: INTEGER_64; an_output: EPX_FILE_DESCRIPTOR)
 			-- Read a single object of size `an_object_size'.
 		require
-			in_not_void: in /= Void
-			buffer_not_void: buffer /= Void
-			bytes_to_read_not_negative: a_bytes_to_read >= 0
+			bytes_to_read_not_negative: an_object_size >= 0
+			output_open: an_output.is_open
 		local
 			bytes_to_read: INTEGER_64
 			max_to_read: INTEGER
@@ -219,14 +231,12 @@ feature {NONE} -- Implementation
 					max_to_read := bytes_to_read.to_integer
 				end
 				in.read_buffer (buffer, 0, max_to_read)
-			variant
-				bytes_to_read
 			until
 				bytes_to_read = 0 or else
 				in.end_of_input or else
 				in.errno.is_not_ok
 			loop
-				fd_stdout.put_buffer (buffer, 0, in.last_read)
+				an_output.put_buffer (buffer, 0, in.last_read)
 				bytes_to_read := bytes_to_read - in.last_read
 				if bytes_to_read > buffer.capacity then
 					max_to_read := buffer.capacity
@@ -234,6 +244,8 @@ feature {NONE} -- Implementation
 					max_to_read := bytes_to_read.to_integer
 				end
 				in.read_buffer (buffer, 0, max_to_read)
+			variant
+				bytes_to_read
 			end
 		end
 

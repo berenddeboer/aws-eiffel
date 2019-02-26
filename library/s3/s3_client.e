@@ -53,7 +53,7 @@ feature {NONE} -- Initialization
 
 feature -- Access
 
-	max_retries: INTEGER = 0
+	max_retries: NATURAL_32 = 0
 			-- How often should requests be retried
 
 	service: STRING = "s3"
@@ -67,14 +67,17 @@ feature -- Access
 
 feature -- Amazon primitives
 
-	get_object (a_bucket, a_key: STRING)
+	get_object (a_key: STRING)
 			-- Send GET request for an object to S3.
 		require
-			a_bucket_not_empty: a_bucket /= Void and then not a_bucket.is_empty
 			a_key_not_empty: a_key /= Void and then not a_key.is_empty
+		local
+			l_data: EPX_MIME_PART
 		do
-			-- TODO: X-Amz-Content-SHA256 field required?
-			get (once "/" + a_bucket + once "/" + a_key)
+			--get (once "/" + a_key)
+			create l_data.make_empty
+			add_x_amz_content_sha256_field (l_data)
+			send_request (http_method_GET, once "/" + a_key, l_data)
 		end
 
 	put_object (a_bucket, a_key: STRING; a_size: INTEGER)
@@ -85,13 +88,13 @@ feature -- Amazon primitives
 			a_key_not_empty: a_key /= Void and then not a_key.is_empty
 			size_not_negative: a_size >= 0
 		local
-			data: EPX_MIME_PART
+			l_data: EPX_MIME_PART
 		do
-			create data.make_empty
-			data.header.set_content_type (mime_type_binary, mime_subtype_octet_stream, Void)
-			data.header.set_content_length (a_size)
+			create l_data.make_empty
+			l_data.header.set_content_type (mime_type_binary, mime_subtype_octet_stream, Void)
+			l_data.header.set_content_length (a_size)
 			-- TODO: X-Amz-Content-SHA256 field required.
-			send_request (http_method_POST, once "/" + a_bucket + once "/" + a_key, data)
+			send_request (http_method_POST, once "/" + a_bucket + once "/" + a_key, l_data)
 		end
 
 
@@ -122,6 +125,7 @@ feature -- Multipart upload
 			end
 		ensure
 			has_upload_id: is_response_ok implies not Result.is_empty
+			parts_attached: attached parts
 		end
 
 	begin_part_upload (an_upload_id, an_object_name: READABLE_STRING_GENERAL; a_size: INTEGER; a_payload_hash: READABLE_STRING_8)
@@ -221,18 +225,16 @@ feature -- Multipart upload
 
 feature -- Amazon higher level functions
 
-	retrieve_object_header_with_retry (a_bucket, a_key: STRING)
+	retrieve_object_header_with_retry (a_key: STRING)
 			-- As S3 fails a lot, this function retries up to `max_retries'
 			-- times to send a request and read the response header.
 			-- Retrieving the body may still fail of course.
 			-- It is advisable that `set_continue_on_error' is called
-			-- before to be resilient against network errors as well.
+			-- before, to be resilient against network errors as well.
 		require
-			a_bucket_not_empty: a_bucket /= Void and then not a_bucket.is_empty
 			a_key_not_empty: a_key /= Void and then not a_key.is_empty
-			open: is_open
 		local
-			l_retries: INTEGER
+			l_retries: NATURAL_32
 			l_done: BOOLEAN
 		do
 			from
@@ -240,7 +242,7 @@ feature -- Amazon higher level functions
 				l_done or else
 				l_retries > max_retries
 			loop
-				get_object (a_bucket, a_key)
+				get_object (a_key)
 				if attached http as l_http then
 					if l_http.errno.is_ok then
 						read_response_header

@@ -44,7 +44,6 @@ feature {NONE} -- Initialiation
 		do
 			region := a_region
 			l_server_name := service + "." + region + ".amazonaws.com"
-			--make_http_11_client (l_server_name)
 			make_secure (l_server_name)
 		end
 

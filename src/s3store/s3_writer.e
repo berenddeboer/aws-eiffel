@@ -88,7 +88,7 @@ feature -- Counters
 	number_of_blocking_reads,
 	number_of_output_buffer_underflows,
 	number_of_output_buffer_overflows,
-	number_of_s3_retries: INTEGER
+	number_of_s3_retries: NATURAL_8
 
 
 feature -- Change

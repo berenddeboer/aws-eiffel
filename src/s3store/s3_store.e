@@ -68,7 +68,7 @@ feature {NONE} -- Argument parsing
 		local
 			parser: AP_PARSER
 		do
-			parser := new_default_parser (once "s3store 1.0 (c) by Berend de Boer <berend@pobox.com>%NStream standard input to a given S3 object.")
+			parser := new_default_parser (once "s3store 1.1 (c) by Berend de Boer <berend@pobox.com>%NStream standard input to a given S3 object.")
 			create key.make ('k', "key")
 			key.set_description ("Key name.")
 			key.enable_mandatory
@@ -90,6 +90,8 @@ feature -- Writing
 
 	copy_input_to_s3 (a_region, a_bucket, a_key: READABLE_STRING_8; an_input: EPX_FILE_DESCRIPTOR)
 			-- Read from stdin, dump to bucket.
+		require
+			input_open: an_input.is_open
 		local
 			writer: S3_WRITER
 			start: EPX_TIME
